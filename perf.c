@@ -3,8 +3,10 @@
 #include "cblas.h"
 #include <stdlib.h>
 #include <stdio.h>
-#define IMIN 50
+#define NB_ITER 100
+#define IMIN 1000
 #define IMAX 1000000
+
 void 
 perf(perf_t * p) {
   gettimeofday(p, NULL);  
@@ -50,8 +52,10 @@ main() {
 
 //initialize arrays
   double * a, *b;
-  int i;
+  int i,j;
+  FILE* output;
   
+  output = fopen("out.txt", "w+"); 
   a = alloc(IMAX, 1);
   b = alloc(IMAX, 1);
   init_test(IMAX, 1, a, IMAX);
@@ -60,22 +64,27 @@ main() {
   for (i = IMIN; i<IMAX; i*=1.25)
   { 
   //ddot timing
-    perf(&start);
-    cblas_ddot(i, a, 1, b, 1);
-    perf(&stop);
-  //End of ddot timing
+      perf(&start);
+      for (j = 0; j<NB_ITER;j++)
+      {
+        cblas_ddot(i, a, 1, b, 1);
+      }
+      perf(&stop);
+    //End of ddot timing
 
-    perf_diff(&start,&stop);
+      perf_diff(&start,&stop);
 
-    perf_printh(&stop);
-    perf_printmicro(&stop);
-     
-    double mflops = perf_mflops(&stop, 1000000);
+      perf_printh(&stop);
+      perf_printmicro(&stop);
+       
+      double mflops = perf_mflops(&stop, 1000000)*NB_ITER;
 
     printf("i : %d => Mflops : %.4f\n",i, mflops);
+    fprintf(output, "%d %.4f\n", i, mflops);
   }
   
   free(a);
   free(b);
+  fclose(output);
   return 0;
 }

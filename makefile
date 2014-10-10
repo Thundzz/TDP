@@ -1,10 +1,10 @@
 CC=gcc
-CFLAGS=-W -Wall
+CFLAGS=-W -Wall -O2
 LDFLAGS=
 EXEC=driver.out
 PERF=perf.out
 
-all: $(EXEC)
+all: $(PERF)
 
 
 perf.out: perf.o ddot.o util.o
