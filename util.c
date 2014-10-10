@@ -5,23 +5,23 @@
 
 static int SEEDED=0;
 
-int * alloc(int m, int n)
+double * alloc(int m, int n)
 {
   if(!SEEDED)
   {
     srand(time(NULL));
     SEEDED ++;
   }
-  int * a = (int *) malloc(m* n * sizeof(int));
+  double * a = (double *) malloc(m* n * sizeof(int));
   return a;
 }
 
-void unalloc(int * a)
+void unalloc(double * a)
 {
   free(a);
 }
 
-void init_rand(int m, int n, int * a, int lda)
+void init_rand(int m, int n, double * a, int lda)
 {
   int i, j;
   for(i= 0; i< m; i++){
@@ -31,7 +31,7 @@ void init_rand(int m, int n, int * a, int lda)
   }
 }
 
-void init_test(int m, int n, int * a, int lda)
+void init_test(int m, int n, double * a, int lda)
 {
   int i, j;
   for(i= 0; i< m; i++){
@@ -42,13 +42,14 @@ void init_test(int m, int n, int * a, int lda)
 }
 
 
-void affiche(int m, int n, int * a, int lda, FILE* flux)
+void affiche(int m, int n, double * a, int lda, FILE* flux)
 {
-  int i, j, aij;
+  int i, j; 
+  double aij;
   for(i= 0; i< m; i++){
     for(j=0; j <n; j++){
       aij = a[j*lda + i];
-      fprintf(flux, "%d ", aij);
+      fprintf(flux, "%g ", aij);
     }
     fprintf(flux, "\n");
   }

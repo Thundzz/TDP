@@ -3,14 +3,14 @@
 
 #include <stdio.h>
 
-int * alloc(int m, int n);
+double * alloc(int m, int n);
 
-void unalloc(int * a);
+void unalloc(double * a);
 
-void init_rand(int m, int n, int * a, int lda);
+void init_rand(int m, int n, double * a, int lda);
 
-void init_test(int m, int n, int * a, int lda);
+void init_test(int m, int n, double * a, int lda);
 
-void affiche(int m, int n, int * a, int lda, FILE* flux);
+void affiche(int m, int n, double * a, int lda, FILE* flux);
 
 #endif

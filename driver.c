@@ -1,9 +1,14 @@
 #include "util.h"
+#include "cblas.h"
 
 int main(void)
 {
-  int * a = alloc(20,10);
-  init_test(3, 3, a, 20);
-  affiche(20,10,a, 20, stdout);
+  double res;
+  double * a = alloc(3,3);
+  init_test(3, 3, a, 3);
+  affiche(3,3,a, 3, stdout);
+  
+  res = cblas_ddot(3, a, 3, a+1, 3);
+  printf("\nres : %g\n", res); 
   return 0;
 }
