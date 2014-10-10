@@ -13,4 +13,4 @@ driver.out: driver.o util.o ddot.o
 	$(CC) -o $@ -c $< $(CFLAGS)
 	
 clean:
-	rm -rf *.o *~ *#
+	rm -rf *.o *~ *# *.out
