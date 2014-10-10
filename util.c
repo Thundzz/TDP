@@ -12,13 +12,8 @@ double * alloc(int m, int n)
     srand(time(NULL));
     SEEDED ++;
   }
-  double * a = (double *) malloc(m* n * sizeof(int));
+  double * a = (double *) malloc(m* n * sizeof(double));
   return a;
-}
-
-void unalloc(double * a)
-{
-  free(a);
 }
 
 void init_rand(int m, int n, double * a, int lda)

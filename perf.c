@@ -1,7 +1,10 @@
 #include "perf.h"
+#include "util.h"
+#include "cblas.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+#define IMIN 50
+#define IMAX 1000000
 void 
 perf(perf_t * p) {
   gettimeofday(p, NULL);  
@@ -39,24 +42,40 @@ perf_mflops(const perf_t * p, const long nb_op) {
   return (double)nb_op / (p->tv_sec * 1000000 + p->tv_usec);
 }
 
-/*
+
 int 
 main() {
   perf_t start;
   perf_t stop;
 
-  perf(&start);
-  sleep(1);
-  perf(&stop);
+//initialize arrays
+  double * a, *b;
+  int i;
+  
+  a = alloc(IMAX, 1);
+  b = alloc(IMAX, 1);
+  init_test(IMAX, 1, a, IMAX);
+  init_test(IMAX, 1, b, IMAX);
+  
+  for (i = IMIN; i<IMAX; i*=1.25)
+  { 
+  //ddot timing
+    perf(&start);
+    cblas_ddot(i, a, 1, b, 1);
+    perf(&stop);
+  //End of ddot timing
 
-  perf_diff(&start,&stop);
+    perf_diff(&start,&stop);
 
-  perf_printh(&stop);
-  perf_printmicro(&stop);
-   
-  double mflops = perf_mflops(&stop, 1000000);
+    perf_printh(&stop);
+    perf_printmicro(&stop);
+     
+    double mflops = perf_mflops(&stop, 1000000);
 
-  printf("Mflops : %.4f\n",mflops);
-
+    printf("i : %d => Mflops : %.4f\n",i, mflops);
+  }
+  
+  free(a);
+  free(b);
+  return 0;
 }
-*/

@@ -5,8 +5,6 @@
 
 double * alloc(int m, int n);
 
-void unalloc(double * a);
-
 void init_rand(int m, int n, double * a, int lda);
 
 void init_test(int m, int n, double * a, int lda);
