@@ -7,7 +7,7 @@ PERF=perf.out
 all: $(PERF)
 
 
-perf.out: perf.o ddot.o util.o
+perf.out: perf.o ddot.o util.o dgemm.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 	
 driver.out: driver.o util.o ddot.o dgemm.o
