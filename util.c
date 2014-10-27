@@ -33,6 +33,16 @@ void init_test(int m, int n, double * a, int lda)
     for(j=0; j <n; j++){
       a[j*lda + i] = i +j*m;
     }
+  }
+}
+
+void init_zero(int m, int n, double * a, int lda)
+{
+  int i, j;
+  for(i= 0; i< m; i++){
+    for(j=0; j <n; j++){
+      a[j*lda + i] = 0;
+    }
   } 
 }
 

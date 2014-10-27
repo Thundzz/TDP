@@ -10,7 +10,7 @@ all: $(PERF)
 perf.out: perf.o ddot.o util.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 	
-driver.out: driver.o util.o ddot.o
+driver.out: driver.o util.o ddot.o dgemm.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
