@@ -26,7 +26,7 @@ void test_dgemm()
   init_test(IMAX, IMAX, b, IMAX);
   init_zero(IMAX, IMAX, c, IMAX);
 
-  for (i = IMIN; i<IMAX; i*=1.25)
+  for (i = IMIN; i<IMAX; i+=10)
   { 
   //ddot timing
       perf(&start);

@@ -5,8 +5,6 @@
 
 #define SIZE 10
 
-
-
 void unit_test_ddot()
 {
   double *a, *b;
@@ -23,6 +21,7 @@ void unit_test_ddot()
   free(a);
   free(b);
 }
+
 /* transpose([[0,3,6],[1,4,7],[2,5,8]]) * [[0,3,6],[1,4,7],[2,5,8]] */
 void unit_test_dgemm()
 {
@@ -36,7 +35,6 @@ void unit_test_dgemm()
 
   cblas_dgemm_scalaire_ikj(3, a, 3, b, 3, c, 3);
 
-
   affiche(3, 3,  a, 3, stdout);
   affiche(3, 3,  b, 3, stdout);  
   affiche(3, 3,  c, 3, stdout);
@@ -44,9 +42,6 @@ void unit_test_dgemm()
   free(b);
   free(c);
 }
-
-
-
 
 int main(void)
 {
