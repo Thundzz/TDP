@@ -1,9 +1,28 @@
 #include "util.h"
 #include "cblas.h"
 #include <stdlib.h>
+#include <stdio.h>
 
-#define IMAX 1000000
+#define SIZE 10
 
+
+
+void unit_test_ddot()
+{
+  double *a, *b;
+  a = alloc(SIZE, 1);
+  b = alloc(SIZE, 1);
+  init_test(SIZE, 1, a, 1);
+  init_test(SIZE, 1, b, 1);
+  
+  double res = cblas_ddot(SIZE, a, 1, b, 1);
+  affiche(SIZE, 1, a, 1, stdout);
+  affiche(SIZE, 1, b, 1, stdout);
+  printf("result = %g\n", res);
+
+  free(a);
+  free(b);
+}
 /* transpose([[0,3,6],[1,4,7],[2,5,8]]) * [[0,3,6],[1,4,7],[2,5,8]] */
 void unit_test_dgemm()
 {
@@ -31,8 +50,8 @@ void unit_test_dgemm()
 
 int main(void)
 {
-
-  unit_test_dgemm();  
+  unit_test_ddot();
+  //unit_test_dgemm();  
 
   return 0;
 }

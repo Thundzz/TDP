@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NB_ITER 1000
+#define NB_ITER 1000000
 #define IMAX 1000000
 #define IMIN 50
 
@@ -13,11 +13,10 @@ void test_ddot()
 {
   perf_t start;
   perf_t stop;
-//initialize arrays
+  //initialize arrays
   double * a, *b;
-  int i,j;
+  int i,j, nbIter;
   FILE* output;
-  
   output = fopen("ddot.txt", "w+"); 
   a = alloc(IMAX, 1);
   b = alloc(IMAX, 1);
@@ -26,26 +25,26 @@ void test_ddot()
   
   for (i = IMIN; i<IMAX; i*=1.25)
   { 
-  //ddot timing
-      perf(&start);
-      for (j = 0; j< NB_ITER;j++)
-      {
-        cblas_ddot(i, a, 1, b, 1);
-      }
-      perf(&stop);
+    //ddot timing
+    nbIter = NB_ITER / i; 
+    perf(&start);
+    for (j = 0; j< nbIter;j++)
+    {
+      cblas_ddot(i, a, 1, b, 1);
+    }
+    perf(&stop);
     //End of ddot timing
 
-      perf_diff(&start,&stop);
+    perf_diff(&start,&stop);
 
-      perf_printh(&stop);
-      perf_printmicro(&stop);
-       
-      double mflops = perf_mflops(&stop, 2*i*NB_ITER);
+    perf_printh(&stop);
+    perf_printmicro(&stop);
+
+    double mflops = perf_mflops(&stop, 2*i*nbIter);
 
     printf("i : %d => Mflops : %.4f\n",i, mflops);
     fprintf(output, "%d %.4f\n", i, mflops);
   }
-  
   free(a);
   free(b);
   fclose(output);
