@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NB_ITER 1000000
-#define IMAX 1000000
+#define NB_ITER 100000000
+#define IMAX 100000000
 #define IMIN 50
 
 void test_ddot(const char * fileName)
