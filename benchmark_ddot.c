@@ -9,7 +9,7 @@
 #define IMAX 1000000
 #define IMIN 50
 
-void test_ddot()
+void test_ddot(const char * fileName)
 {
   perf_t start;
   perf_t stop;
@@ -17,7 +17,7 @@ void test_ddot()
   double * a, *b;
   int i,j, nbIter;
   FILE* output;
-  output = fopen("ddot.txt", "w+"); 
+  output = fopen(fileName, "w+"); 
   a = alloc(IMAX, 1);
   b = alloc(IMAX, 1);
   init_test(IMAX, 1, a, IMAX);
@@ -51,7 +51,7 @@ void test_ddot()
 }
 
 
-int main() {
-  test_ddot();
+int main(int argc, char ** argv) {
+  (argc>= 2)? test_ddot(argv[1]) : test_ddot("ddot.txt");
   return 0;
 }

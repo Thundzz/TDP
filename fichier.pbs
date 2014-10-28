@@ -1,0 +1,10 @@
+#PBS -N benchmark_ddot
+
+#PBS -l walltime=00:02:30 
+#PBS -l nodes=1
+#PBS -l naccesspolicy=singlejob
+
+TDP/benchmark_ddot.out "TDP/ddot.txt"
+TDP/benchmark_ddot.out "TDP/ddot2.txt" 
+TDP/benchmark_ddot.out "TDP/ddot3.txt"
+TDP/benchmark_ddot.out "TDP/ddot4.txt"

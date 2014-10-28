@@ -13,7 +13,7 @@ void test_dgemm()
 {
   perf_t start;
   perf_t stop;
-//initialize arrays
+  //initialize arrays
   double * a, *b, *c;
   int i,j;
   FILE* output;
@@ -28,14 +28,14 @@ void test_dgemm()
 
   for (i = IMIN; i<IMAX; i+=10)
   { 
-  //ddot timing
+      //ddot timing
       perf(&start);
       for (j = 0; j<NB_ITER ;j++)
       {
         cblas_dgemm_scalaire_kij(i, a, IMAX, b, IMAX, c, IMAX);
       }
       perf(&stop);
-    //End of ddot timing
+      //End of ddot timing
 
       perf_diff(&start,&stop);
 
