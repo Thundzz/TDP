@@ -4,7 +4,7 @@
 
 #define IMAX 1000000
 
-
+/* transpose([[0,3,6],[1,4,7],[2,5,8]]) * [[0,3,6],[1,4,7],[2,5,8]] */
 void unit_test_dgemm()
 {
   double * a, *b, *c;
@@ -15,7 +15,7 @@ void unit_test_dgemm()
   init_test(3, 3, b, 3);
   init_zero(3, 3, c, 3);
 
-  cblas_dgemm_scalaire(3, a, 3, b, 3, c, 3);
+  cblas_dgemm_scalaire_ikj(3, a, 3, b, 3, c, 3);
 
 
   affiche(3, 3,  a, 3, stdout);

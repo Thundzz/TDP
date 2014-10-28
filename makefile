@@ -1,14 +1,18 @@
 CC=gcc
-CFLAGS=-W -Wall -O2
-LDFLAGS=
+CFLAGS= -W -Wall -O2
+LDFLAGS= -W -Wall -O2
 EXEC=driver.out
-PERF=perf.out
-
-all: $(PERF)
+BENCH=benchmark_ddot.out benchmark_dgemm.out
 
 
-perf.out: perf.o ddot.o util.o dgemm.o
+all: $(EXEC) $(BENCH)
+
+benchmark_ddot.out: benchmark_ddot.o perf.o ddot.o util.o
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+benchmark_dgemm.out: benchmark_dgemm.o perf.o dgemm.o util.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 	
 driver.out: driver.o util.o ddot.o dgemm.o
 	$(CC) -o $@ $^ $(LDFLAGS)
