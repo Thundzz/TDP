@@ -9,6 +9,8 @@
 #define IMAX 1000
 #define IMIN 100
 
+
+/*Possible combinations : kij, ijk, ikj, jik*/
 void test_dgemm()
 {
   perf_t start;
@@ -18,7 +20,7 @@ void test_dgemm()
   int i,j;
   FILE* output;
   
-  output = fopen("dgemmkij.txt", "w+"); 
+  output = fopen("dgemmjik.txt", "w+"); 
   a = alloc(IMAX, IMAX);
   b = alloc(IMAX, IMAX);
   c = alloc(IMAX, IMAX);
@@ -32,7 +34,7 @@ void test_dgemm()
       perf(&start);
       for (j = 0; j<NB_ITER ;j++)
       {
-        cblas_dgemm_scalaire_kij(i, a, IMAX, b, IMAX, c, IMAX);
+        cblas_dgemm_scalaire_jik(i, a, IMAX, b, IMAX, c, IMAX);
       }
       perf(&stop);
       //End of ddot timing

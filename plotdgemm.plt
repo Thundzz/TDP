@@ -9,4 +9,7 @@ set xlabel "Nombre d'éléments"
 set ylabel "Perfs (en MFlop/s)"
 #set term png
 #set output "figure.png"
-plot "dgemmkij.txt" using 1:2 with linespoints lc rgb "blue" title "dgemm"
+plot "dgemmkij.txt" using 1:2 with linespoints lc rgb "blue" title "dgemmkij",\
+	 "dgemmijk.txt" using 1:2 with linespoints lc rgb "red" title "dgemmijk",\
+	 "dgemmikj.txt" using 1:2 with linespoints lc rgb "green" title "dgemmikj",\
+	 "dgemmjik.txt" using 1:2 with linespoints lc rgb "orange" title "dgemmjik",\

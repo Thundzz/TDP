@@ -7,6 +7,12 @@ BENCH=benchmark_ddot.out benchmark_dgemm.out
 
 all: $(EXEC) $(BENCH)
 
+send:
+	scp * formation:TDP/
+
+recup:
+	scp formation:TDP/*.txt .
+
 benchmark_ddot.out: benchmark_ddot.o perf.o ddot.o util.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 

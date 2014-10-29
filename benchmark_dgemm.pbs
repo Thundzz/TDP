@@ -1,0 +1,7 @@
+#PBS -N benchmark_dgemm
+
+#PBS -l walltime=00:02:30 
+#PBS -l nodes=1
+#PBS -l naccesspolicy=singlejob
+
+TDP/benchmark_dgemm.out 
