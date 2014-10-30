@@ -13,7 +13,7 @@ void cblas_dgemv(const enum CBLAS_ORDER order,
 		fprintf(stderr, "CblasRowMajor not supported. Reorder your matrices and use CblasColMajor instead\n");
 		return;
 	}
-	if (transA == CblasConjTrans)
+	if (TransA == CblasConjTrans)
 		fprintf(stderr, "CblasConjTrans not supported. The program will use CblasTrans instead\n");
 	else
 	{
