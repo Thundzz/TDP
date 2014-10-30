@@ -8,6 +8,6 @@ set title "Perf de ddot en fonction de la taille des vecteurs"
 set xlabel "Taille (en ko)"
 set ylabel "Perfs (en MFlop/s)"
 set term png
-set output "ddot1.png"
-plot [16:4096][] "ddot.txt" using 1:2 with linespoints lc rgb "blue" title "ddot"
+set output "ddot2.png"
+plot [16:40000][] "ddot.txt" using 1:2 with linespoints lc rgb "blue" title "ddot"
 #pause -1
