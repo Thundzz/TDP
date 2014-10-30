@@ -5,6 +5,7 @@
 
 static int SEEDED=0;
 
+//Alloue un tableau de doubles de taille MxN
 double * alloc(int m, int n)
 {
   if(!SEEDED)
@@ -16,6 +17,7 @@ double * alloc(int m, int n)
   return a;
 }
 
+//Remplit aléatoirement une matrice A de taille MxN et de leading dimension lda  
 void init_rand(int m, int n, double * a, int lda)
 {
   int i, j;
@@ -26,6 +28,7 @@ void init_rand(int m, int n, double * a, int lda)
   }
 }
 
+//Remplit une matrice A de taille MxN par les nombres de 0 à MxN
 void init_test(int m, int n, double * a, int lda)
 {
   int i, j;
@@ -36,6 +39,7 @@ void init_test(int m, int n, double * a, int lda)
   }
 }
 
+//Initialise A <- Matrice identité
 void init_id(int m, int n, double * a, int lda)
 {
   int i, z;
@@ -47,7 +51,7 @@ void init_id(int m, int n, double * a, int lda)
   }
 }
 
-
+//Initialise A = 0
 void init_zero(int m, int n, double * a, int lda)
 {
   int i, j;
@@ -58,7 +62,7 @@ void init_zero(int m, int n, double * a, int lda)
   } 
 }
 
-
+//Affiche la matrice
 void affiche(int m, int n, double * a, int lda, FILE* flux)
 {
   int i, j; 

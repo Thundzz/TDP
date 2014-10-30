@@ -1,5 +1,6 @@
 #include "cblas.h"
 
+//Y = Y + aX
 void cblas_daxpy(const int N, const double alpha, const double *X,
                  const int incX, double *Y, const int incY)
 {

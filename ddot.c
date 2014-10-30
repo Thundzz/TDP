@@ -1,5 +1,6 @@
 #include "cblas.h"
 
+//produit scalaire : res = X.Y 
 double cblas_ddot(const int N, const double *X, const int incX,
                   const double *Y, const int incY)
 {

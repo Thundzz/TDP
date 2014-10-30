@@ -8,7 +8,6 @@
 
 /*A[i][j] === j*lda + i*/
 
-
 void cblas_dgemm_scalaire_ikj(const int M,
 				 const double *A, const int lda,
 				 const double *B, const int ldb,
@@ -86,18 +85,19 @@ void cblas_dgemm_scalaire_jik(const int M,
 	}
 }
 
+//C = C + alpha*A*B
 void cblas_dgemm_scalaire(const int M, const int K, const int N,
 							  const double alpha, const double *A, const int lda,
 				 			  const double *B, const int ldb,
                  			        double *C, const int ldc)
 {
 	int i, j, k;
-	register double tmp;
+	register double tmp;  //Stocke tmp dans un registre
 	for (i = 0; i < M; ++i)
 	{
 		for (j = 0; j < N; ++j)
 		{	
-			tmp = 0;   //Stocke tmp dans un registre
+			tmp = 0;  
 			for (k = 0; k < K; ++k)
 			{
 				tmp += A[i*lda +k]* B[j*ldb +k];
@@ -108,7 +108,8 @@ void cblas_dgemm_scalaire(const int M, const int K, const int N,
 }
 
 /*
-	A need to be K*N for this function to work
+	A needs to be K*N for this function to work
+	Version bloc de dgemm
 */
 void cblas_dgemm_block(const int M, const int K, const int N,
 					   const double alpha, const double * A, const int lda,
@@ -122,6 +123,7 @@ void cblas_dgemm_block(const int M, const int K, const int N,
 		{
 			for (k = 0; k < K; k +=BLOCK_SIZE)
 			{
+				// Ajustement de la taille du bloc pour ne pas déborder
 				M2 = MIN(BLOCK_SIZE, M-i);
 				N2 = MIN(BLOCK_SIZE, N-j);
 				K2 = MIN(BLOCK_SIZE, K-k);
@@ -157,6 +159,7 @@ void cblas_dgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA
 					   	C, ldc);	
 }
 
+
 struct params{
 	int M;
 	int K;
@@ -187,7 +190,7 @@ void* thread_f(void* params)
 	int ldc = p->ldc;
 	int end = p->end;
 	int start = p->start;
-	printf("start:%d, end:%d\n", start, end);
+	//printf("start:%d, end:%d\n", start, end);
 	int M2, N2, K2, i, j, k;
 	for (i = 0; i < M; i +=BLOCK_SIZE)
 	{
@@ -209,6 +212,9 @@ void* thread_f(void* params)
 	return 0;
 }
 
+/*dgemm version bloc, parallèle. Découpe les colonnes en nbthreads régions
+**Chaque région est ensuite calculée par un thread séparé 
+*/
 void cblas_dgemm_block_parallel(const int M, const int K, const int N,
 					   			const double alpha, const double * A, const int lda,
 					   			const double * B, const int ldb,
@@ -216,7 +222,7 @@ void cblas_dgemm_block_parallel(const int M, const int K, const int N,
 {
 	int nbthreads;
 	if (getenv("MYLIB_NUM_THREADS") == NULL)
-		nbthreads = 5;
+		nbthreads = 5; //Par défaut, 5 threads
 	else
 		nbthreads = atoi(getenv("MYLIB_NUM_THREADS"));
 	if (nbthreads > N)
@@ -242,6 +248,7 @@ void cblas_dgemm_block_parallel(const int M, const int K, const int N,
 	int i;
 	for (i = 0; i<nbthreads; i++)
 	{ 
+		//Découpage de N en nbthreads parts
 		ptab[i] = p;
 		ptab[i].start = i*region;
 		if (i != nbthreads-1)

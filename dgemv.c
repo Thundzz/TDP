@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "cblas.h"
 
+//Y = alpha*A*X + beta*Y
 void cblas_dgemv(const enum CBLAS_ORDER order,
                  const enum CBLAS_TRANSPOSE TransA, const int M, const int N,
                  const double alpha, const double *A, const int lda,
