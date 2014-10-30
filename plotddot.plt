@@ -9,5 +9,5 @@ set xlabel "Nombre d'éléments"
 set ylabel "Perfs (en MFlop/s)"
 #set term png
 #set output "figure.png"
-plot [:5000][] "ddot.txt" using 1:2 with linespoints lc rgb "blue" title "ddot"
+plot [][] "ddot.txt" using 1:2 with linespoints lc rgb "blue" title "ddot"
 #pause -1
