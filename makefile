@@ -19,7 +19,6 @@ benchmark_ddot.out: benchmark_ddot.o perf.o ddot.o util.o
 benchmark_dgemm.out: benchmark_dgemm.o perf.o dgemm.o util.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-	
 driver.out: driver.o util.o ddot.o dgemm.o daxpy.o dgemv.o dger.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
