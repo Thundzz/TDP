@@ -16,7 +16,7 @@ void unit_test_ddot()
   double res = cblas_ddot(SIZE, a, 1, b, 1);
   affiche(SIZE, 1, a, 1, stdout);
   affiche(SIZE, 1, b, 1, stdout);
-  printf("result = %g\n", res);
+  printf("result = %g, expected 285 \n", res);
 
   free(a);
   free(b);

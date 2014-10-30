@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NB_ITER 100000000
 #define IMAX 100000000
 #define IMIN 50
 
@@ -17,9 +16,7 @@ void test_ddot(const char * fileName)
   double * a, *b;
   int i,j, nbIter;
   FILE* output;
-  output = fopen(fileName, "w+"); 
-
-  
+  output = fopen(fileName, "w+");
   for (i = IMIN; i<IMAX; i*=1.25)
   { 
     a = alloc(i, 1);
@@ -28,7 +25,7 @@ void test_ddot(const char * fileName)
     init_rand(i, 1, b, i);
 
     //ddot timing
-    nbIter = NB_ITER / i; 
+    nbIter= 1+ IMAX/(100*i);
     perf(&start);
     for (j = 0; j< nbIter;j++)
     {
@@ -47,7 +44,7 @@ void test_ddot(const char * fileName)
     double mflops = perf_mflops(&stop, 2*i*nbIter);
 
     printf("i : %d => Mflops : %.4f\n",i, mflops);
-    fprintf(output, "%d %.4f\n", i, mflops);
+    fprintf(output, "%g %.4f\n", i*sizeof(double)*2.0/1024.0, mflops);
   }
 
   fclose(output);

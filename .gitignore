@@ -27,4 +27,6 @@
 *.i*86
 *.x86_64
 *.hex
+
+#Temporary text files
 *.txt
