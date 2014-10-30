@@ -10,8 +10,8 @@ void unit_test_ddot()
   double *a, *b;
   a = alloc(SIZE, 1);
   b = alloc(SIZE, 1);
-  init_test(SIZE, 1, a, 1);
-  init_test(SIZE, 1, b, 1);
+  init_test(SIZE, 1, a, SIZE);
+  init_test(SIZE, 1, b, SIZE);
   
   double res = cblas_ddot(SIZE, a, 1, b, 1);
   affiche(SIZE, 1, a, 1, stdout);
@@ -161,10 +161,10 @@ void unit_test_dger()
 
 int main(void)
 {
-  //unit_test_ddot();
+  unit_test_ddot();
   //unit_test_dgemm();
   //unit_test_dgemm_scal(); 
-  unit_test_dgemm_block();
+  //unit_test_dgemm_block();
   //unit_test_daxpy();
   //unit_test_dgemv();
   //unit_test_dger();

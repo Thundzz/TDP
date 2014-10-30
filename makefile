@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS= -W -Wall -O2
+CFLAGS= -W -Wall -O2 -DBLOCK_SIZE=100
 LDFLAGS= -W -Wall -O2
 EXEC=driver.out
-BENCH=benchmark_ddot.out benchmark_dgemm.out
+BENCH=benchmark_ddot.out benchmark_dgemm.out perf_ddot.out
 
 
 all: $(EXEC) $(BENCH)
@@ -10,8 +10,13 @@ all: $(EXEC) $(BENCH)
 send:
 	scp * formation:TDP/
 
+
 recup:
 	scp formation:TDP/*.txt .
+
+perf_ddot.out: perf_ddot.o perf.o ddot.o util.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 
 benchmark_ddot.out: benchmark_ddot.o perf.o ddot.o util.o
 	$(CC) -o $@ $^ $(LDFLAGS)

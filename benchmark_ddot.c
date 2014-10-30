@@ -18,13 +18,15 @@ void test_ddot(const char * fileName)
   int i,j, nbIter;
   FILE* output;
   output = fopen(fileName, "w+"); 
-  a = alloc(IMAX, 1);
-  b = alloc(IMAX, 1);
-  init_test(IMAX, 1, a, IMAX);
-  init_test(IMAX, 1, b, IMAX);
+
   
   for (i = IMIN; i<IMAX; i*=1.25)
   { 
+    a = alloc(i, 1);
+    b = alloc(i, 1);
+    init_rand(i, 1, a, i);
+    init_rand(i, 1, b, i);
+
     //ddot timing
     nbIter = NB_ITER / i; 
     perf(&start);
@@ -35,6 +37,8 @@ void test_ddot(const char * fileName)
     perf(&stop);
     //End of ddot timing
 
+    free(a);
+    free(b);
     perf_diff(&start,&stop);
 
     perf_printh(&stop);
@@ -45,8 +49,7 @@ void test_ddot(const char * fileName)
     printf("i : %d => Mflops : %.4f\n",i, mflops);
     fprintf(output, "%d %.4f\n", i, mflops);
   }
-  free(a);
-  free(b);
+
   fclose(output);
 }
 

@@ -20,24 +20,30 @@ void test_dgemm()
   int i,j;
   FILE* output;
   
-  output = fopen("dgemmblock.txt", "w+"); 
-  a = alloc(IMAX, IMAX);
-  b = alloc(IMAX, IMAX);
-  c = alloc(IMAX, IMAX);
-  init_test(IMAX, IMAX, a, IMAX);
-  init_test(IMAX, IMAX, b, IMAX);
-  init_zero(IMAX, IMAX, c, IMAX);
+  output = fopen("dgemmscal.txt", "w+"); 
+
 
   for (i = IMIN; i<IMAX; i+=10)
-  { 
+  {
+      a = alloc(i, i);
+      b = alloc(i, i);
+      c = alloc(i, i);
+      init_rand(i, i, a, i);
+      init_rand(i, i, b, i);
+      init_zero(i, i, c, i); 
       //ddot timing
       perf(&start);
       for (j = 0; j<NB_ITER ;j++)
       {
-        cblas_dgemm_block(i, i, i, a, IMAX, b, IMAX, c, IMAX);
+        cblas_dgemm_scalaire(i, i, i, a, i, b, i, c, i);
       }
+
       perf(&stop);
       //End of ddot timing
+      
+      free(a);
+      free(b);
+      free(c);
 
       perf_diff(&start,&stop);
 
@@ -49,9 +55,6 @@ void test_dgemm()
     printf("i : %d => Mflops : %.4f\n",i, mflops);
     fprintf(output, "%d %.4f\n", i, mflops);
   }
-  
-  free(a);
-  free(b);
   fclose(output);
 }
 
