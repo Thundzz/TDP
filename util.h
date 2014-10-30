@@ -34,4 +34,8 @@ void cblas_dgemm_block(const int M, const int K, const int N,
 					   const double * B, const int ldb,
 					   		 double * C, const int ldc);
 
+void cblas_dgemm_block_parallel(const int M, const int K, const int N,
+					   			const double alpha, const double * A, const int lda,
+					   			const double * B, const int ldb,
+					   		 		  double * C, const int ldc);
 #endif

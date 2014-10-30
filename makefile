@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS= -W -Wall -O2 -DBLOCK_SIZE=100
-LDFLAGS= -W -Wall -O2
+LDFLAGS= -W -Wall -O2 -pthread
 EXEC=driver.out
 BENCH=benchmark_ddot.out benchmark_dgemm.out
 

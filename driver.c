@@ -103,6 +103,25 @@ void unit_test_dgemm()
   free(c);
 }
 
+void unit_test_dgemm_parallel()
+{
+  double * a, *b, *c;
+  a = alloc(2,3);
+  b = alloc(2,3);
+  c = alloc(3,3);
+  init_test(2, 3, a, 2);
+  init_test(2, 3, b, 2);
+  init_zero(3, 3, c, 3);
+
+  cblas_dgemm_block_parallel(3, 2, 3, 1.0, a, 2, b, 2, c, 3);
+
+  affiche(2, 3,  a, 2, stdout);
+  affiche(2, 3,  b, 2, stdout);  
+  affiche(3, 3,  c, 3, stdout);
+  free(a);
+  free(b);
+  free(c);
+}
 void unit_test_daxpy()
 {
   double *a, *b;
@@ -185,7 +204,8 @@ int main(void)
   //unit_test_dgemm_ikj();
   //unit_test_dgemm_scal(); 
   //unit_test_dgemm_block();
-  unit_test_dgemm();
+  //unit_test_dgemm();
+  unit_test_dgemm_parallel();
   //unit_test_daxpy();
   //unit_test_dgemv();
   //unit_test_dger();
