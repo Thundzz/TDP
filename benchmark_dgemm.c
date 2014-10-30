@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NB_ITER 1
+#define NB_ITER 10
 #define IMAX 1000
 #define IMIN 100
 
@@ -20,7 +20,7 @@ void test_dgemm()
   int i,j;
   FILE* output;
   
-  output = fopen("dgemmscal.txt", "w+"); 
+  output = fopen("dgemmpara.txt", "w+"); 
 
 
   for (i = IMIN; i<IMAX; i+=10)
@@ -35,7 +35,8 @@ void test_dgemm()
       perf(&start);
       for (j = 0; j<NB_ITER ;j++)
       {
-        cblas_dgemm_scalaire(i, i, i, a, i, b, i, c, i);
+        //cblas_dgemm_scalaire(i, i, i, a, i, b, i, c, i);
+        cblas_dgemm_block_parallel(i, i, i, 1.0, a, i, b, i, c, i);
       }
 
       perf(&stop);

@@ -3,11 +3,15 @@
 
 #include <stdio.h>
 
+#define MIN(a,b) ((a)<(b))?(a):(b)
+
 double * alloc(int m, int n);
 
 void init_rand(int m, int n, double * a, int lda);
 
 void init_test(int m, int n, double * a, int lda);
+
+void init_id(int m, int n, double * a, int lda);
 
 void init_zero(int m, int n, double * a, int lda);
 

@@ -36,6 +36,18 @@ void init_test(int m, int n, double * a, int lda)
   }
 }
 
+void init_id(int m, int n, double * a, int lda)
+{
+  int i, z;
+  init_zero(m, n, a, lda);
+  z = min(m, n);
+  for (i = 0; i<z; i++)
+  {
+    a[i*lda+i] = 1;
+  }
+}
+
+
 void init_zero(int m, int n, double * a, int lda)
 {
   int i, j;

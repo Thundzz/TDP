@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "cblas.h"
-
+#include "util.h"
 
 #define BLOCK_SIZE 40
 
 /*A[i][j] === j*lda + i*/
-#define MIN(a,b) ((a)<(b))?(a):(b)
+
 
 void cblas_dgemm_scalaire_ikj(const int M,
 				 const double *A, const int lda,
@@ -198,7 +198,7 @@ void* thread_f(void* params)
 				M2 = MIN(BLOCK_SIZE, M-i);
 				N2 = MIN(BLOCK_SIZE, N-j+start);
 				K2 = MIN(BLOCK_SIZE, K-k);
-				printf("M2:%d, N2:%d, K2:%d\n", M2, N2, K2);
+
 				cblas_dgemm_scalaire(M2, K2, N2, alpha,
 									 A+ i*lda +k, lda,
 				 					 B+ j*ldb +k, ldb,
@@ -214,8 +214,12 @@ void cblas_dgemm_block_parallel(const int M, const int K, const int N,
 					   			const double * B, const int ldb,
 					   		 		  double * C, const int ldc)
 {
-	int nbthreads = atoi(getenv("MYLIB_NUM_THREADS"));
-	if(nbthreads > N)
+	int nbthreads;
+	if (getenv("MYLIB_NUM_THREADS") == NULL)
+		nbthreads = 5;
+	else
+		nbthreads = atoi(getenv("MYLIB_NUM_THREADS"));
+	if (nbthreads > N)
 		nbthreads = N;
 
 	int region = N/nbthreads;
@@ -235,14 +239,20 @@ void cblas_dgemm_block_parallel(const int M, const int K, const int N,
 	pthread_t *threads = malloc(nbthreads * sizeof(pthread_t));
 	struct params *ptab = malloc(nbthreads * sizeof(struct params));
 
-
-
 	int i;
 	for (i = 0; i<nbthreads; i++)
 	{ 
 		ptab[i] = p;
 		ptab[i].start = i*region;
-		ptab[i].end = (i+1)*region;		
+		if (i != nbthreads-1)
+		{
+			ptab[i].end = (i+1)*region;
+		}		
+		else
+		{
+			ptab[i].end = (i+1)*region+N%region;
+			ptab[i].N = region+N%region;
+		}
 		pthread_create(&threads[i], NULL, thread_f, &ptab[i]);
 	}
 	for (i = 0; i<nbthreads; i++)
