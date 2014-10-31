@@ -11,7 +11,7 @@ send:
 	scp * formation:TDP/2
 
 main.out: particule.o main.o
-	$(CC) -o $@ -c $< $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
