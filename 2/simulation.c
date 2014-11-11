@@ -28,6 +28,8 @@ void init_mpi_pset_type(MPI_Datatype * MPI_PSET)
 
 int main(void)
 {
+	double dt = 1000.0;
+
 	/* Initialisation des constantes MPI */
 	int myrank, nb_processes;
   	MPI_Init( NULL, NULL ); 
@@ -64,7 +66,7 @@ int main(void)
 			MPI_Wait(&recv_req, &recv_stat);
 		}
 		/* Mise à jour des positions des particules. */
-		pset_step(s);
+		pset_step(s, dt);
 	}
 	
 	/* Libération des ressources propres à ce processus.*/

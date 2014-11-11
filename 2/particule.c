@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-double dt = 1000.0;
 static int SEEDED =0;
 
 unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
@@ -124,7 +123,7 @@ void f_grav(pset * s1, pset* s2)
 	}
 }
 
-void update_spd(pset * s){
+void update_spd(pset * s, double dt){
 	int size = s->nb;
 	for (int i = 0; i < size; ++i)
 	{
@@ -133,7 +132,7 @@ void update_spd(pset * s){
 	}
 }
 
-void update_pos(pset * s){
+void update_pos(pset * s, double dt){
 	int size = s->nb;
 	for (int i = 0; i < size; ++i)
 	{
@@ -142,8 +141,8 @@ void update_pos(pset * s){
 	}
 }
 
-void pset_step(pset * s)
+void pset_step(pset * s, double dt)
 {
-	update_spd(s);
-	update_pos(s);
+	update_spd(s, dt);
+	update_pos(s, dt);
 }

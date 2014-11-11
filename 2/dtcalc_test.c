@@ -9,8 +9,10 @@ int main()
 {
 	double defdt = 10000000.0;
 	double dt;
-
 	double x1,y1,x2,y2, x1new, x2new, y1new, y2new, gap, move1, move2;
+
+	FILE * fichier =fopen("datafile", "w+");
+	fprintf(fichier, "#Iteration X1 Y1 X2 Y2\n");
 	pset *s = pset_alloc(1);
 	pset *s2= pset_alloc(1);
 	pset_init_rand(s);
@@ -30,6 +32,9 @@ int main()
 
 	f_grav(s, s2); //a(t=0)
 	f_grav(s2, s);
+	fprintf(fichier, 
+		"%d %g %g %g %g",
+		0, x1, y1, x2, y2);
 
  	for (int i = 0; i < NBITER ; ++i)
  	{
@@ -41,6 +46,12 @@ int main()
 		y1new = s->pos[0+size1];
 		x2new = s2->pos[0];
 		y2new = s2->pos[0+size2];
+		
+		fprintf(fichier, 
+			"%d %g %g %g %g",
+			i+1, x1new, y1new, x2new, y2new);
+		if(i!= NBITER -1)
+			fprintf(fichier, "\n\n\n");
 
 		move1 = distance(x1, y1, x1new, y1new); 
 		move2 = distance(x2, y2, x2new, y2new);
@@ -61,6 +72,7 @@ int main()
  		pset_print(s);
 		pset_print(s2);	
  	}
+	fclose(fichier);
 	pset_free(s);
 	pset_free(s2);
 	return 0;

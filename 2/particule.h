@@ -33,6 +33,11 @@ void pset_init_rand(pset * s);
 **/
 void pset_print(pset * s);
 
+/** Calcule la distance entre deux particules données par leurs
+ * coordonnées cartésiennes.
+ */
+double distance(double x1, double y1, double x2, double y2);
+
 /** Calcule la force gravitationnelle entre les
  * deux ensembles de particules passées en paramètre, et met à jour
  * les accélérations.
@@ -42,13 +47,13 @@ void f_grav(pset * s1, pset* s2);
 /** Met à jour les vitesses de toutes les particules de l'ensemble p
  *  en supposant que la valeur de l'accélération est correcte.
  **/
-void update_spd(pset * s);
+void update_spd(pset * s, double dt);
 
 
 /** Met à jour les positions de toutes les particules de l'ensemble p
  *  en supposant que la valeur de la vitesse est correcte.
  **/
-void update_pos(pset* s);
+void update_pos(pset* s, double dt);
 
 
 /** Réalise un pas d'itération sur tous les éléments de l'ensemble s:
@@ -57,7 +62,7 @@ void update_pos(pset* s);
 * calculée. i.e que f_grav a déjà été executée avec tous
 * les autres ensembles de particules.
 **/
-void pset_step(pset * s);
+void pset_step(pset * s, double dt);
 
 
 #endif
