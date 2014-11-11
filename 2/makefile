@@ -1,7 +1,7 @@
-CC=gcc
+CC=mpicc
 CFLAGS= -W -Wall -O2 -std=c99
 LDFLAGS= -W -Wall -O2 -lm
-EXEC=main.out
+EXEC=main.out simulation.out
 BENCH=
 TEST=
 
@@ -13,6 +13,9 @@ send:
 plot:
 	gnuplot plot.plt
 
+simulation.out: particule.o simulation.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+	
 main.out: particule.o main.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 

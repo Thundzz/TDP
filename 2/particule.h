@@ -51,7 +51,13 @@ void update_spd(pset * s);
 void update_pos(pset* s);
 
 
-/** Réalise un pas d'itération sur tous les éléments de l'ensemble s
+/** Réalise un pas d'itération sur tous les éléments de l'ensemble s:
+* La position de chaque particule est mise à jour correctement, en 
+* supposant que la valeur actuelle de l'accéléréation a déjà été
+* calculée. i.e que f_grav a déjà été executée avec tous
+* les autres ensembles de particules.
 **/
 void pset_step(pset * s);
+
+
 #endif
