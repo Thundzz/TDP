@@ -3,15 +3,20 @@ CFLAGS= -W -Wall -O2 -std=c99
 LDFLAGS= -W -Wall -O2 -lm
 EXEC=main.out simulation.out
 BENCH=
-TEST=
+TEST=dtcalc_test.out
 
 all: $(TEST) $(BENCH) $(EXEC)
+
+test: $(TEST)
 
 send:
 	scp * formation:TDP/2
 
 plot:
 	gnuplot plot.plt
+
+dtcalc_test.out: particule.o dtcalc.o dtcalc_test.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 simulation.out: particule.o simulation.o
 	$(CC) -o $@ $^ $(LDFLAGS)
