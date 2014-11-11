@@ -14,7 +14,7 @@ int main()
 	pset_print(s2);	
 
 	FILE * fichier =fopen("datafile", "w+");
-
+	fprintf(fichier, "#Iteration X1 Y1 X2 Y2\n");
 	for (int i = 0; i < NBITER ; ++i)
 	{
 		f_grav(s, s2);
@@ -22,8 +22,8 @@ int main()
 		pset_step(s);
 		pset_step(s2);
 		fprintf(fichier, 
-			"%d %g %g\n%d %g %g",
-			i, s->pos[0], s->pos[1],i, s2->pos[0], s2->pos[1]);
+			"%d %g %g %g %g",
+			i, s->pos[0], s->pos[1], s2->pos[0], s2->pos[1]);
 
 		if(i!= NBITER -1)
 			fprintf(fichier, "\n\n\n");
