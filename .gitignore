@@ -28,6 +28,8 @@
 *.x86_64
 *.hex
 
-#Temporary text files
+#Other output files
 *.txt
 *.png
+*.gif
+datafile

@@ -10,6 +10,9 @@ all: $(TEST) $(BENCH) $(EXEC)
 send:
 	scp * formation:TDP/2
 
+plot:
+	gnuplot plot.plt
+
 main.out: particule.o main.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 

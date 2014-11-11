@@ -13,7 +13,7 @@ int main()
 	pset_print(s);
 	pset_print(s2);	
 
-	FILE * fichier =fopen("deux.txt", "w+");
+	FILE * fichier =fopen("datafile", "w+");
 
 	for (int i = 0; i < NBITER ; ++i)
 	{
@@ -22,8 +22,11 @@ int main()
 		pset_step(s);
 		pset_step(s2);
 		fprintf(fichier, 
-			"%d %g %g %g %g\n",
-			i, s->pos[0], s->pos[1], s2->pos[0], s2->pos[1]);
+			"%d %g %g\n%d %g %g",
+			i, s->pos[0], s->pos[1],i, s2->pos[0], s2->pos[1]);
+
+		if(i!= NBITER -1)
+			fprintf(fichier, "\n\n\n");
 	}
 
 	pset_print(s);
