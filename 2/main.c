@@ -1,7 +1,7 @@
 #include "particule.h"
 #include <stdio.h>
 
-#define NBITER 10
+#define NBITER 20
 
 int main()
 {
