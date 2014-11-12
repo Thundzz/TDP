@@ -1,5 +1,5 @@
 #!/bin/bash
 
-./dtcalc_test.out; 
+mpiexec ./dtcalc_test.out; 
 make plot;
 eog particles.gif;

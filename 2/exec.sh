@@ -1,5 +1,5 @@
 #!/bin/bash
 
-./main.out; 
+mpiexec ./main.out; 
 make plot;
 eog particles.gif;
