@@ -65,15 +65,15 @@ int main(void)
 
 	for (int i = 0; i < NB_ITER; ++i)
 	{
-		for (int i = 0; i < nb_processes; ++i)
+		for (int j = 0; j < nb_processes; ++j)
 		{
 			/* Envoi du buffer de calcul actuel. */
 			MPI_Send_init(calc_buf, 1, MPI_PSET,
-						  (i+1) % nb_processes, 3, MPI_COMM_WORLD, &send_req);
+						  (myrank+1) % nb_processes, 3, MPI_COMM_WORLD, &send_req);
 
 			/* Récéption du buffer de calcul suivant*/
 			MPI_Recv_init(comm_buf, 1, MPI_PSET,
-						  (i-1) % nb_processes, 3, MPI_COMM_WORLD, &recv_req);
+						  (myrank-1) % nb_processes, 3, MPI_COMM_WORLD, &recv_req);
 
 			/* Début des communications */
 			MPI_Start(&send_req);
