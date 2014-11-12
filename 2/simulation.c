@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "particule.h"
 #include "mpi.h"
 
@@ -31,7 +32,6 @@ void swap(pset* a, pset * b) {
     *b = temp;
 }
 
-
 int main(void)
 {
 	double dt = 1000.0;
@@ -45,18 +45,23 @@ int main(void)
 	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
 	/* Initialisation du type pset MPI avec une fonction auxilliaire*/
-  	MPI_Datatype MPI_PSET = NULL;
+  	MPI_Datatype MPI_PSET;
   	init_mpi_pset_type(&MPI_PSET);
-
 
 	/* Initialisation du set de particules propre au processus. */
 	pset * s = pset_alloc(NB_PARTICLES);
 	pset_init_rand(s);
 
 	/* Initialisation des buffers.*/
+	int sd = sizeof(double);
 	pset * calc_buf = pset_alloc(NB_PARTICLES);
 	pset * comm_buf = pset_alloc(NB_PARTICLES);
-	*calc_buf = *s;
+
+	calc_buf->nb = s->nb;
+	memcpy(calc_buf->m, s->m  , NB_PARTICLES*sd);
+	memcpy(calc_buf->acc, s->acc, 2* NB_PARTICLES*sd);
+	memcpy(calc_buf->spd, s->spd, 2* NB_PARTICLES*sd);
+	memcpy(calc_buf->pos, s->pos, 2* NB_PARTICLES*sd);
 
 	/* Initialisation du fichier dans lequel écrira ce processus. */
 	pset_print(s);
@@ -64,8 +69,7 @@ int main(void)
 	sprintf(file_name, "datafile%d", myrank);
 	FILE * fichier =fopen(file_name, "w+");
 
-
-	/* définition des processus voisin suivant et précédent*/
+	/* Définition des processus voisin suivant et précédent*/
 	int next_proc =  (myrank+1) % nb_processes ;
 	int prev_proc = (((myrank-1 ) % nb_processes) +nb_processes) %nb_processes;
 	
