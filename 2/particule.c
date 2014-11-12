@@ -59,16 +59,21 @@ void pset_print(pset * set)
 	}
 }
 
-void pset_init_rand(pset * s)
+void seed()
 {
-	int i;
-	int size = s->nb;
 	if(!SEEDED)
 	{
 		unsigned long seed = mix(clock(), time(NULL), getpid());
 		srand(seed);
 		SEEDED++;
 	}
+}
+
+void pset_init_rand(pset * s)
+{
+	seed();
+	int i;
+	int size = s->nb;
 	for (i = 0; i < size; i++)
 	{
 		s->m[i] = 1.0e10;
@@ -89,13 +94,14 @@ double v_orbit(double mass, double distance)
 
 void pset_init_orbit(pset * primaries, pset *satellites)
 {
-	double distance = 500;
+	seed();
+	double distance = 500+  rand()% 600;
 	int size = satellites->nb;
 	for (int i = 0; i < size; ++i)
 	{
-		satellites->m[i] = primaries->m[i] /100;
+		satellites->m[i] = primaries->m[i] /2000;
 		satellites->pos[i] = primaries->pos[i] -distance;
-		satellites->pos[i+size] = satellites->pos[i+size];
+		satellites->pos[i+size] = primaries->pos[i+size];
 		satellites->spd[i] = 0;
 		satellites->spd[i+size]= v_orbit(primaries->m[i], distance);
 		satellites->acc[i] = 0;

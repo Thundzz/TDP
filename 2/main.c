@@ -1,11 +1,11 @@
 #include "particule.h"
 #include <stdio.h>
 
-#define NBITER 20
+#define NBITER 500
 
 int main()
 {
-	double dt = 1000.0;
+	double dt = 500.0;
 	pset *s = pset_alloc(1);
 	pset *s2= pset_alloc(1);
 	pset_init_rand(s);
