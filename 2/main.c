@@ -9,7 +9,7 @@ int main()
 	pset *s = pset_alloc(1);
 	pset *s2= pset_alloc(1);
 	pset_init_rand(s);
-	pset_init_rand(s2);
+	pset_init_orbit(s, s2);
 
 	pset_print(s);
 	pset_print(s2);	

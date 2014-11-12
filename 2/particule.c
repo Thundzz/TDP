@@ -81,6 +81,28 @@ void pset_init_rand(pset * s)
 	}
 }
 
+/* Calcule la vitesse de satellisation */
+double v_orbit(double mass, double distance)
+{
+	return sqrt(CONST_GRAV*mass/distance);
+}
+
+void pset_init_orbit(pset * primaries, pset *satellites)
+{
+	double distance = 500;
+	int size = satellites->nb;
+	for (int i = 0; i < size; ++i)
+	{
+		satellites->m[i] = primaries->m[i] /100;
+		satellites->pos[i] = primaries->pos[i] -distance;
+		satellites->pos[i+size] = satellites->pos[i+size];
+		satellites->spd[i] = 0;
+		satellites->spd[i+size]= v_orbit(primaries->m[i], distance);
+		satellites->acc[i] = 0;
+		satellites->acc[i+size] = 0;
+	}
+}
+
 /** Calcule la distance entre deux particules données par leurs
  * coordonnées cartésiennes.
  */

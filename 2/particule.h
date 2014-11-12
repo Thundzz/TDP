@@ -29,6 +29,14 @@ void pset_free(pset * set);
 **/
 void pset_init_rand(pset * s);
 
+
+
+/** /!\ Suppose que le tailles de primaries et satellites sont égales
+* Initialise l'ensemble de d'atome satellites de façon à ce que 
+* la particule d'indice [i] de satellites orbite autour de la particule
+* d'indice [i] de primaries.
+*/
+void pset_init_orbit(pset * primaries, pset *satellites);
 /** Affiche les infos sur les particules d'un ensemble
 **/
 void pset_print(pset * s);
