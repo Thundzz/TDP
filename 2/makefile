@@ -12,6 +12,9 @@ test: $(TEST)
 send:
 	scp * formation:TDP/2
 
+simu:
+	mpiexec -np 2 simulation.out 
+
 plot:
 	gnuplot plot.plt
 
