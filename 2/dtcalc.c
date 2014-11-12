@@ -6,9 +6,8 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
-void mindist_update(pset *s1, pset *s2)
-{
-}
+/** Calcule la solution réelle positive d'une équation du second degré ax*x + bx + c = 0
+ */
 
 double quad_eq_positive_sol(double a, double b, double c)
 {
