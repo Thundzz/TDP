@@ -25,6 +25,12 @@ void init_mpi_pset_type(MPI_Datatype * MPI_PSET)
 	MPI_Type_struct(1, blocklen, disp, type, MPI_PSET); 
 	MPI_Type_commit(MPI_PSET);
 }
+void swap(pset* a, pset * b) {
+    pset temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
 
 int main(void)
 {
@@ -34,7 +40,7 @@ int main(void)
 	int myrank, nb_processes;
   	MPI_Init( NULL, NULL ); 
   	MPI_Request send_req, recv_req;
-  	MPI_Status recv_stat;
+  	MPI_Status send_stat, recv_stat;
   	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
 	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
@@ -44,8 +50,12 @@ int main(void)
 
 
 	/* Initialisation du set de particules propre au processus. */
-	pset *s = pset_alloc(NB_PARTICLES);
+	pset * s = pset_alloc(NB_PARTICLES);
 	pset_init_rand(s);
+
+	/* Initialisation des buffers.*/
+	pset * calc_buf = pset_alloc(NB_PARTICLES);
+	pset * comm_buf = pset_alloc(NB_PARTICLES);
 
 	/* Initialisation du fichier dans lequel écrira ce processus. */
 	pset_print(s);
@@ -57,13 +67,25 @@ int main(void)
 	{
 		for (int i = 0; i < nb_processes; ++i)
 		{
-			/* Communication avec un autre processus et calcul
-			 * de la force */
-			MPI_Send_init(s /*à changer*/, 1, MPI_PSET, 0/*à changer*/, 99, MPI_COMM_WORLD, &send_req);
-			MPI_Recv_init(s /*à changer*/, 1, MPI_PSET, 0/*à changer*/, 99, MPI_COMM_WORLD, &recv_req);
+			/* Envoi du buffer de calcul actuel. */
+			MPI_Send_init(calc_buf, 1, MPI_PSET,
+						  (i+1) % nb_processes, 3, MPI_COMM_WORLD, &send_req);
+
+			/* Récéption du buffer de calcul suivant*/
+			MPI_Recv_init(comm_buf, 1, MPI_PSET,
+						  (i-1) % nb_processes, 3, MPI_COMM_WORLD, &recv_req);
+
+			/* Début des communications */
 			MPI_Start(&send_req);
-			f_grav(s, s /*à changer*/);
+			MPI_Start(&recv_req);
+
+			/* Calcul de la force */
+			f_grav(s, calc_buf);
+
+			/* On attend la fin de la réception*/
+			MPI_Wait(&send_req, &send_stat);
 			MPI_Wait(&recv_req, &recv_stat);
+			swap(calc_buf, comm_buf);
 		}
 		/* Mise à jour des positions des particules. */
 		pset_step(s, dt);
