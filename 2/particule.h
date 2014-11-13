@@ -31,17 +31,24 @@ void pset_copy(pset * origin, pset * dest);
 **/
 void pset_free(pset * set);
 
+
+
 /** Initialise aléatoirement un set
 **/
 void pset_init_rand(pset * s);
 
+/** Initialise un ensemble de particule contenant
+ * une seule particule "soleil", de masse 1e10, 
+ * et placée en position (x=0, y=0)
+ **/
+void pset_init_sun(pset * sun);
 
-/** /!\ Suppose que le tailles de primaries et satellites sont égales
-* Initialise l'ensemble de d'atome satellites de façon à ce que 
-* la particule d'indice [i] de satellites orbite autour de la particule
-* d'indice [i] de primaries.
+/** Suppose que le le pset primary contient une seule particule.
+* Initialise l'ensemble de de particules satellites de façon à ce que 
+* chaque particule de satellites orbite autour de la particule
+* de primary.
 */
-void pset_init_orbit(pset * primaries, pset *satellites);
+void pset_init_orbit(pset * primary, pset *satellites);
 /** Affiche les infos sur les particules d'un ensemble
 **/
 void pset_print(pset * s);

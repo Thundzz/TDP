@@ -112,18 +112,31 @@ double v_orbit(double mass, double distance)
 	return sqrt(CONST_GRAV*mass/distance);
 }
 
-void pset_init_orbit(pset * primaries, pset *satellites)
+void pset_init_sun(pset * sun)
+{
+	sun->m[0] = 1.0e10;
+	sun->pos[0] = 0;
+	sun->pos[1] = 0;
+	sun->spd[0] = 0;
+	sun->spd[1] = 0;
+	sun->acc[0] = 0;
+	sun->acc[1] = 0;
+}
+
+void pset_init_orbit(pset * primary, pset *satellites)
 {
 	seed();
-	double distance = 500+  rand()% 600;
+	double dmin= 200, distance;
 	int size = satellites->nb;
 	for (int i = 0; i < size; ++i)
 	{
-		satellites->m[i] = primaries->m[i] /2000;
-		satellites->pos[i] = primaries->pos[i] -distance;
-		satellites->pos[i+size] = primaries->pos[i+size];
+		dmin += 200;
+		distance = dmin +  rand()% 100;
+		satellites->m[i] = primary->m[0] /2000;
+		satellites->pos[i] = primary->pos[0] -distance;
+		satellites->pos[i+size] = primary->pos[0+size];
 		satellites->spd[i] = 0;
-		satellites->spd[i+size]= v_orbit(primaries->m[i], distance);
+		satellites->spd[i+size]= v_orbit(primary->m[0], distance);
 		satellites->acc[i] = 0;
 		satellites->acc[i+size] = 0;
 	}
