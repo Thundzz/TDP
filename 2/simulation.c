@@ -4,7 +4,7 @@
 #include "mpi.h"
 
 #define NB_PARTICLES 2
-#define NB_ITER 500
+#define NB_ITER 400
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
@@ -31,7 +31,7 @@ void swap(pset* a, pset * b) {
 
 int main(void)
 {
-	double defdt = 1e6;
+	double defdt = 500;
 	double dt = defdt;
 	/* Initialisation des constantes MPI */
 	int myrank, nb_processes;
@@ -102,7 +102,7 @@ int main(void)
 
 			/* Calcul de la force */
 			f_grav(s, calc_buf);
-			dt = dt_local_update(defdt, s);
+			//dt = dt_local_update(defdt, s);
 
 			/* On attend la fin des communications */
 			MPI_Wait(&send_req, &send_stat);
@@ -111,7 +111,7 @@ int main(void)
 			swap(calc_buf, comm_buf);
 		}
 		/* Mise à jour des positions des particules. */
-		dt_global_update(&dt);
+		//dt_global_update(&dt);
 		//printf("new dt is : %g\n", dt);
 		pset_step(s, dt);
 
