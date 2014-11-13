@@ -102,8 +102,8 @@ int main(void)
 
 			/* Calcul de la force */
 			f_grav(s, calc_buf);
-			//dt = dt_local_update(defdt, s);
-
+			dt = dt_local_update(defdt, s);
+			
 			/* On attend la fin des communications */
 			MPI_Wait(&send_req, &send_stat);
 			MPI_Wait(&recv_req, &recv_stat);
@@ -111,8 +111,8 @@ int main(void)
 			swap(calc_buf, comm_buf);
 		}
 		/* Mise à jour des positions des particules. */
-		//dt_global_update(&dt);
-		//printf("new dt is : %g\n", dt);
+		dt_global_update(&dt);
+
 		pset_step(s, dt);
 
 		/* Enregistrement de la position actuelle des particules
