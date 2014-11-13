@@ -7,7 +7,7 @@
 #define NB_ITER 1
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
-void init_mpi_pset_type(MPI_Datatype * MPI_PSET)
+void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
 {
 	MPI_Datatype type[5] = { MPI_INT , MPI_DOUBLE, MPI_DOUBLE,
 							 MPI_DOUBLE, MPI_DOUBLE }; 
@@ -15,7 +15,6 @@ void init_mpi_pset_type(MPI_Datatype * MPI_PSET)
   					   2*NB_PARTICLES, 2*NB_PARTICLES}; 
 	MPI_Aint i1,i2 ; 
 	MPI_Aint disp[5];
-	pset * p = pset_alloc(NB_PARTICLES);
 	MPI_Get_address(p, &i1); 
 	MPI_Get_address(&p->nb, &i2); disp[0] = i2-i1;
 	MPI_Get_address(&p->m[0], &i2); disp[1] = i2-i1 ; 
@@ -44,19 +43,20 @@ int main(void)
   	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
 	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
-	/* Initialisation du type pset MPI avec une fonction auxilliaire*/
-  	MPI_Datatype MPI_PSET;
-  	init_mpi_pset_type(&MPI_PSET);
-
 	/* Initialisation du set de particules propre au processus. */
 	pset * s = pset_alloc(NB_PARTICLES);
 	pset_init_rand(s);
 
+	/* Initialisation du type pset MPI avec une fonction auxilliaire*/
+  	MPI_Datatype MPI_PSET;
+	init_mpi_pset_type(&MPI_PSET, s);
+
 	/* Initialisation des buffers.*/
-	int sd = sizeof(double);
 	pset * calc_buf = pset_alloc(NB_PARTICLES);
 	pset * comm_buf = pset_alloc(NB_PARTICLES);
 
+	/* /!\ Cette partie peut facilement être factorisée.*/
+	int sd = sizeof(double);
 	calc_buf->nb = s->nb;
 	memcpy(calc_buf->m, s->m  , NB_PARTICLES*sd);
 	memcpy(calc_buf->acc, s->acc, 2* NB_PARTICLES*sd);
