@@ -28,4 +28,4 @@ main.out: particule.o main.o
 	$(CC) -o $@ -c $< $(CFLAGS)
 	
 clean:
-	rm -rf *.o  *.[oe][0-9]* *~ *# *.out
+	rm -rf *.o  *.[oe][0-9]* *~ *# *.out *.gif datafile* particles*.plt
