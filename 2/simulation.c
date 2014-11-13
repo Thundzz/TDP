@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "particule.h"
+#include "dtcalc.h"
 #include "mpi.h"
 
 #define NB_PARTICLES 2
@@ -9,20 +10,21 @@
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
 {
-	MPI_Datatype type[5] = { MPI_INT , MPI_DOUBLE, MPI_DOUBLE,
-							 MPI_DOUBLE, MPI_DOUBLE }; 
-  	int blocklen[5] = {1, NB_PARTICLES, 2*NB_PARTICLES, 
-  					   2*NB_PARTICLES, 2*NB_PARTICLES}; 
+	MPI_Datatype type[6] = { MPI_INT , MPI_DOUBLE, MPI_DOUBLE,
+							 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE }; 
+  	int blocklen[6] = {1, NB_PARTICLES, 2*NB_PARTICLES, 
+  					   2*NB_PARTICLES, 2*NB_PARTICLES, NB_PARTICLES}; 
 	MPI_Aint i1,i2 ; 
-	MPI_Aint disp[5];
+	MPI_Aint disp[6];
 	MPI_Get_address(p, &i1); 
 	MPI_Get_address(&p->nb, &i2); disp[0] = i2-i1;
 	MPI_Get_address(&p->m[0], &i2); disp[1] = i2-i1 ; 
-	MPI_Get_address(&p->acc[0], &i2); disp[2] = i2-i1 ; 
-	MPI_Get_address(&p->spd[0], &i2); disp[3] = i2-i1 ; 
-	MPI_Get_address(&p->pos[0], &i2); disp[4] = i2-i1;
+	MPI_Get_address(&p->pos[0], &i2); disp[2] = i2-i1;
+	MPI_Get_address(&p->spd[0], &i2); disp[3] = i2-i1 ;
+	MPI_Get_address(&p->acc[0], &i2); disp[4] = i2-i1 ; 
+	MPI_Get_address(&p->dmin[0], &i2); disp[5] = i2-i1;
 
-	MPI_Type_struct(5, blocklen, disp, type, MPI_PSET); 
+	MPI_Type_struct(6, blocklen, disp, type, MPI_PSET); 
 	MPI_Type_commit(MPI_PSET);
 }
 
@@ -34,7 +36,8 @@ void swap(pset* a, pset * b) {
 
 int main(void)
 {
-	double dt = 200.0;
+	double defdt = 200.0;
+	double dt = defdt;
 
 	/* Initialisation des constantes MPI */
 	int myrank, nb_processes;
@@ -72,7 +75,7 @@ int main(void)
 	/* Définition des processus voisin suivant et précédent*/
 	int next_proc=  (myrank+1) % nb_processes ;
 	int prev_proc= (((myrank-1 ) % nb_processes) +nb_processes) %nb_processes;
-	
+
 	for (int i = 0; i < NB_ITER; ++i)
 	{
 		/* /!\ Cette partie peut facilement être factorisée.*/
@@ -100,6 +103,7 @@ int main(void)
 
 			/* Calcul de la force */
 			f_grav(s, calc_buf);
+			dt = dt_local_update(defdt, s);
 
 			/* On attend la fin des communications */
 			MPI_Wait(&send_req, &send_stat);
@@ -108,6 +112,8 @@ int main(void)
 			swap(calc_buf, comm_buf);
 		}
 		/* Mise à jour des positions des particules. */
+		dt_global_update(&dt);
+		//printf("new dt is : %g\n", dt);
 		pset_step(s, dt);
 
 		/* Enregistrement de la position actuelle des particules

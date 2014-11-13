@@ -10,10 +10,10 @@ double dt_local_update_calc(double dist, double spdx, double spdy,
 
 /** Retourne le minimum local des dt liés aux atomes d'un set
  */
-double dt_local_update(double defdt, pset *s, double* dmin);
+double dt_local_update(double defdt, pset *s);
 
-/** Calcule le dt global par réduction
+/** Récupère le nouveau dt global par réduction
  */
-double dt_global_update(double* locdt);
+void dt_global_update(double* locdt);
 
 #endif

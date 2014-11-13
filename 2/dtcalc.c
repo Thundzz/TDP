@@ -51,7 +51,7 @@ double dt_local_update_calc(double dist, double spdx, double spdy,
 	return quad_eq_positive_sol(0.5*acc, spd, -0.1*dist);
 }
 
-double dt_local_update(double defdt, pset *s, double* dmin)
+double dt_local_update(double defdt, pset *s)
 {
 	int i;
 	double spdx, spdy, accx, accy, dist;
@@ -64,15 +64,15 @@ double dt_local_update(double defdt, pset *s, double* dmin)
 		spdy = s->spd[i+size];
 		accx = s->acc[i];
 		accy = s->acc[i+size];
-		dist = dmin[i];
+		dist = s->dmin[i];
 		newdt = MIN(newdt, dt_local_update_calc(dist, spdx, spdy, accx, accy));
 	}
 	return newdt;
 }
 
-double dt_global_update(double* locdt)
+void dt_global_update(double* locdt)
 {
 	double globdt;
 	MPI_Allreduce(locdt, &globdt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-	return globdt;
+	*locdt = globdt;
 }
