@@ -4,7 +4,7 @@
 #include "mpi.h"
 
 #define NB_PARTICLES 1
-#define NB_ITER 1
+#define NB_ITER 10
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
@@ -47,13 +47,19 @@ int main(void)
 	pset * s = pset_alloc(NB_PARTICLES);
 	pset_init_rand(s);
 
-	/* Initialisation du type pset MPI avec une fonction auxilliaire*/
-  	MPI_Datatype MPI_PSET;
-	init_mpi_pset_type(&MPI_PSET, s);
-
 	/* Initialisation des buffers.*/
 	pset * calc_buf = pset_alloc(NB_PARTICLES);
 	pset * comm_buf = pset_alloc(NB_PARTICLES);
+
+	/* Initialisation des types pset MPI pour le set local et les buffers.*/
+  	MPI_Datatype MPI_PSET;
+	init_mpi_pset_type(&MPI_PSET, s);
+
+  	MPI_Datatype MPI_CALC_BUF;
+	init_mpi_pset_type(&MPI_CALC_BUF, calc_buf);
+
+	MPI_Datatype MPI_COMM_BUF;
+	init_mpi_pset_type(&MPI_COMM_BUF, comm_buf);
 
 	/* /!\ Cette partie peut facilement être factorisée.*/
 	int sd = sizeof(double);
@@ -78,11 +84,11 @@ int main(void)
 		for (int j = 0; j < nb_processes; ++j)
 		{
 			/* Envoi du buffer de calcul actuel. */
-			MPI_Send_init(calc_buf, 1, MPI_PSET,
+			MPI_Send_init(calc_buf, 1, MPI_CALC_BUF,
 						 next_proc, 3, MPI_COMM_WORLD, &send_req);
 
 			/* Récéption du buffer de calcul suivant*/
-			MPI_Recv_init(comm_buf, 1, MPI_PSET,
+			MPI_Recv_init(comm_buf, 1, MPI_COMM_BUF,
 						  prev_proc, 3, MPI_COMM_WORLD, &recv_req);
 
 			/* Début des communications */
@@ -96,12 +102,6 @@ int main(void)
 			MPI_Wait(&send_req, &send_stat);
 			MPI_Wait(&recv_req, &recv_stat);
 
-			/* Debug stuff */
-			if(myrank ==0){
-				printf("--------------------\nReceived buffer:\n");
-				pset_print(comm_buf);
-				printf("End received buffer:\n--------------------\n");
-			}
 			swap(calc_buf, comm_buf);
 		}
 		/* Mise à jour des positions des particules. */
