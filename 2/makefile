@@ -3,7 +3,7 @@ CFLAGS= -W -Wall -O2 -std=c99
 LDFLAGS= -W -Wall -O2 -lm
 EXEC=main.out simulation.out
 BENCH=
-TEST=dtcalc_test.out
+TEST=
 
 all: $(TEST) $(BENCH) $(EXEC)
 
@@ -17,9 +17,6 @@ simu:
 
 plot:
 	gnuplot plot.plt
-
-dtcalc_test.out: particule.o dtcalc.o dtcalc_test.o
-	$(CC) -o $@ $^ $(LDFLAGS)
 
 simulation.out: particule.o simulation.o dtcalc.o
 	$(CC) -o $@ $^ $(LDFLAGS)
