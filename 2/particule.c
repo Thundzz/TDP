@@ -141,13 +141,13 @@ void f_grav(pset * s1, pset* s2)
 		for (j = 0; j < size2; ++j)
 		{
 			d = distance(s1->pos[i], s1->pos[i+ size],
-						 s2->pos[i], s2->pos[i+ size2]);
+						 s2->pos[j], s2->pos[j+ size2]);
 			// Workaround: Si la distance entre deux particules est nulle, on 
 			// ne calcule pas la force.
 			if(d !=0 ){
-				inten = intensity(s1->m[i], s2->m[i], d);
-				force[0]+= inten *(s2->pos[i] - s1->pos[i]); 
-				force[1]+= inten *(s2->pos[i+size2] - s1->pos[i+size]);
+				inten = intensity(s1->m[i], s2->m[j], d);
+				force[0]+= inten *(s2->pos[j] - s1->pos[i]); 
+				force[1]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
 			}
 		}
 		s1->acc[i] =force[0]/ s1->m[i];

@@ -3,8 +3,8 @@
 #include "particule.h"
 #include "mpi.h"
 
-#define NB_PARTICLES 1
-#define NB_ITER 10
+#define NB_PARTICLES 2
+#define NB_ITER 100
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
@@ -25,6 +25,7 @@ void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
 	MPI_Type_struct(5, blocklen, disp, type, MPI_PSET); 
 	MPI_Type_commit(MPI_PSET);
 }
+
 void swap(pset* a, pset * b) {
     pset temp = *a;
     *a = *b;
@@ -33,7 +34,7 @@ void swap(pset* a, pset * b) {
 
 int main(void)
 {
-	double dt = 1000.0;
+	double dt = 200.0;
 
 	/* Initialisation des constantes MPI */
 	int myrank, nb_processes;
@@ -59,15 +60,8 @@ int main(void)
 	init_mpi_pset_type(&MPI_CALC_BUF, calc_buf);
 
 	MPI_Datatype MPI_COMM_BUF;
-	init_mpi_pset_type(&MPI_COMM_BUF, comm_buf);
+	init_mpi_pset_type(&MPI_COMM_BUF, comm_buf);	
 
-	/* /!\ Cette partie peut facilement être factorisée.*/
-	int sd = sizeof(double);
-	calc_buf->nb = s->nb;
-	memcpy(calc_buf->m, s->m  , NB_PARTICLES*sd);
-	memcpy(calc_buf->acc, s->acc, 2* NB_PARTICLES*sd);
-	memcpy(calc_buf->spd, s->spd, 2* NB_PARTICLES*sd);
-	memcpy(calc_buf->pos, s->pos, 2* NB_PARTICLES*sd);
 
 	/* Initialisation du fichier dans lequel écrira ce processus. */
 	pset_print(s);
@@ -76,11 +70,20 @@ int main(void)
 	FILE * fichier =fopen(file_name, "w+");
 
 	/* Définition des processus voisin suivant et précédent*/
-	int next_proc =  (myrank+1) % nb_processes ;
-	int prev_proc = (((myrank-1 ) % nb_processes) +nb_processes) %nb_processes;
+	int next_proc=  (myrank+1) % nb_processes ;
+	int prev_proc= (((myrank-1 ) % nb_processes) +nb_processes) %nb_processes;
 	
 	for (int i = 0; i < NB_ITER; ++i)
 	{
+		/* /!\ Cette partie peut facilement être factorisée.*/
+		/*On met à jour le nouveau calc buff en lui donnant la valeur
+		  locale mise à jour*/
+		int sd = sizeof(double);
+		calc_buf->nb = s->nb;
+		memcpy(calc_buf->m, s->m  , NB_PARTICLES*sd);
+		memcpy(calc_buf->acc, s->acc, 2* NB_PARTICLES*sd);
+		memcpy(calc_buf->spd, s->spd, 2* NB_PARTICLES*sd);
+		memcpy(calc_buf->pos, s->pos, 2* NB_PARTICLES*sd);
 		for (int j = 0; j < nb_processes; ++j)
 		{
 			/* Envoi du buffer de calcul actuel. */
@@ -107,10 +110,17 @@ int main(void)
 		/* Mise à jour des positions des particules. */
 		pset_step(s, dt);
 
-		/* Enregistrement de la position actuelle de la particule dans un fichier */
-		fprintf(fichier, 
-			"%d %g %g\n\n",
-			i, s->pos[0], s->pos[0+NB_PARTICLES]);
+		/* Enregistrement de la position actuelle des particules
+		 * locales dans un fichier */
+		fprintf(fichier, "%d ", i);
+		for (int i = 0; i < NB_PARTICLES; ++i)
+		{
+			fprintf(fichier, 
+					"%g %g ",
+					s->pos[i], s->pos[i+NB_PARTICLES]);
+		}
+		if(i!= NB_ITER -1)
+			fprintf(fichier, "\n\n\n");
 	}
 	
 	/* Libération des ressources propres à ce processus.*/
