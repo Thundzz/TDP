@@ -5,10 +5,13 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
+#include <float.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 static int SEEDED =0;
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
 {
@@ -26,16 +29,21 @@ unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
 
 pset * pset_alloc(int nb_par){
 	pset * set = (pset *)malloc(sizeof(pset));
+	int i;
 	if(set == NULL)
 	{
 		fprintf(stderr, "Can't allocate memory for the set creation.\n");
 		exit(EXIT_FAILURE);
 	}
+	set->nb = nb_par;
 	set->m = malloc(nb_par * sizeof(double));
 	set->pos = malloc(2* nb_par * sizeof(double));
 	set->spd = malloc(2* nb_par * sizeof(double));
 	set->acc = malloc(2* nb_par * sizeof(double));
-	set->nb = nb_par;
+	set->dmin = malloc(nb_par * sizeof(double));
+
+	for (i = 0; i<nb_par; i++)
+		set->dmin[i] = DBL_MAX;
 	return set;
 }
 
@@ -43,6 +51,7 @@ void pset_free(pset * set){
 	free(set->pos);
 	free(set->spd);
 	free(set->acc);
+	free(set->dmin);
 	free(set->m);
 	free(set);
 }
@@ -146,6 +155,7 @@ void f_grav(pset * s1, pset* s2)
 	int i, j;
 	double d, inten;
 	int size = s1->nb, size2= s2->nb;
+
 	for (i = 0; i < size; ++i)
 	{
 		double force[2] = {0.0, 0.0};
@@ -156,6 +166,7 @@ void f_grav(pset * s1, pset* s2)
 			// Workaround: Si la distance entre deux particules est nulle, on 
 			// ne calcule pas la force.
 			if(d !=0 ){
+				s1->dmin[i] = MIN(s1->dmin[i], d);
 				inten = intensity(s1->m[i], s2->m[j], d);
 				force[0]+= inten *(s2->pos[j] - s1->pos[i]); 
 				force[1]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
@@ -186,6 +197,6 @@ void update_pos(pset * s, double dt){
 
 void pset_step(pset * s, double dt)
 {
-	update_spd(s, dt);
 	update_pos(s, dt);
+	update_spd(s, dt);
 }

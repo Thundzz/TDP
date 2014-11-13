@@ -12,6 +12,7 @@ struct p_set {
 	double * acc;
 	double * spd;
 	double * pos;
+	double * dmin;
 };
 
 typedef struct p_set pset;

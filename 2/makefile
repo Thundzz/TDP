@@ -21,7 +21,7 @@ plot:
 dtcalc_test.out: particule.o dtcalc.o dtcalc_test.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-simulation.out: particule.o simulation.o
+simulation.out: particule.o simulation.o dtcalc.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 	
 main.out: particule.o main.o
