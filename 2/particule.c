@@ -76,6 +76,7 @@ void pset_print(pset * set)
 		printf("\tx:%g y:%g\n", set->pos[i], set->pos[i+ size]);
 		printf("\tvx:%g vy:%g\n",set->spd[i], set->spd[i+ size]);
 		printf("\tax:%g ay:%g\n",set->acc[i], set->acc[i+ size]);
+		printf("\tclosest atom gap:%g\n",set->dmin[i]);
 	}
 }
 
@@ -177,25 +178,30 @@ void f_grav(pset * s1, pset* s2)
 
 	for (i = 0; i < size; ++i)
 	{
-		double force[2] = {0.0, 0.0};
-		for (j = 0; j < size2; ++j)
+		if (s1->m[i] != 0)
 		{
-			d = distance(s1->pos[i], s1->pos[i+ size],
-						 s2->pos[j], s2->pos[j+ size2]);
-			// Workaround: Si la distance entre deux particules est nulle, on 
-			// ne calcule pas la force.
-			if(d !=0 ){
-				s1->dmin[i] = MIN(s1->dmin[i], d);
-				inten = intensity(s1->m[i], s2->m[j], d);
-				force[0]+= inten *(s2->pos[j] - s1->pos[i]); 
-				force[1]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
+			double force[2] = {0.0, 0.0};
+			for (j = 0; j < size2; ++j)
+			{
+				if(s2->m[j] != 0)
+					d = distance(s1->pos[i], s1->pos[i+ size],
+								 s2->pos[j], s2->pos[j+ size2]);
+				else 
+					d = DBL_MAX;
+				// Workaround: Si la distance entre deux particules est nulle, on 
+				// ne calcule pas la force.
+				if(d != 0 ){
+					s1->dmin[i] = MIN(s1->dmin[i], d);
+					inten = intensity(s1->m[i], s2->m[j], d);
+					force[0]+= inten *(s2->pos[j] - s1->pos[i]); 
+					force[1]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
+				}
 			}
-		}
-		if(s1->m[i] == 0){
-			s1->acc[i] = 0;
-			s1->acc[i+size] = 0;
-		}
-		else{
+			// if(s1->m[i] == 0){
+			// 	s1->acc[i] = 0;
+			// 	s1->acc[i+size] = 0;
+			// }
+			//else
 			s1->acc[i] =force[0]/ s1->m[i];
 			s1->acc[i+size] = force[1]/ s1->m[i];
 		}
@@ -220,8 +226,18 @@ void update_pos(pset * s, double dt){
 	}
 }
 
+void reinit_dmin(pset*s)
+{
+	int size = s->nb;
+	for (int i = 0; i < size; ++i)
+	{
+		s->dmin[i] = DBL_MAX;
+	}
+}
+
 void pset_step(pset * s, double dt)
 {
 	update_pos(s, dt);
 	update_spd(s, dt);
+	reinit_dmin(s);
 }
