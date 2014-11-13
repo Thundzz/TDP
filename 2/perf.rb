@@ -7,7 +7,7 @@ def gen_plot_cmd(nbProc, nbParticle)
 		s= 2
 		e = 3
 		for j in 1..nbParticle
-			cmd += "\'datafile#{i-1}\' index (i-1) using #{s}:#{s+1} with circle lc rgb \'#{color[i-1% color.size]}\'"
+			cmd += "\'datafile#{i-1}\' index (i-1) using #{s}:#{s+1} with circle lc rgb \'#{color[i-1% color.size]}\' title 'Processeur#{i-1}, Particule#{j-1}'"
 			s+=2
 			unless (i== nbProc && j==nbParticle)
 				cmd+= ', '
@@ -23,7 +23,7 @@ end
 
 def gen_plot_script(filename, output, nbProc, nbParticle)
 	File.open(filename, 'w+') do |f|  
-		f.puts("set terminal gif animate delay 10\n"+
+		f.puts("set terminal gif size 800,600 animate delay 10\n"+
 				"set output '#{output}'\n"+
 				"stats 'datafile0' nooutput\n"+
 				"set xrange [-2000:2001]\n"+

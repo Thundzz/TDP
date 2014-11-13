@@ -4,7 +4,7 @@
 #include "mpi.h"
 
 #define NB_PARTICLES 2
-#define NB_ITER 400
+#define NB_ITER 200
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
