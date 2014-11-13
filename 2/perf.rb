@@ -35,9 +35,9 @@ def simulate(nbProcess, nbParticle)
 	system("mpiexec -np #{nbProcess} ./simulation.out")
 	gen_plot_script(filename, nbProcess, nbParticle)
 	system("gnuplot #{plotfile}")
-	system("eog #{giffile}")
+	system("eog particles.gif")
 end
 
-simulate(4, 2)
+simulate(4, 1)
 
 #gen_plot_script("plot42", 4,1)

@@ -27,7 +27,7 @@ unsigned long mix(unsigned long a, unsigned long b, unsigned long c)
     return c;
 }
 
-pset * pset_alloc(int nb_par){
+pset * pset_alloc(int nb_par, int rank){
 	pset * set = (pset *)malloc(sizeof(pset));
 	int i;
 	if(set == NULL)
@@ -41,9 +41,12 @@ pset * pset_alloc(int nb_par){
 	set->spd = malloc(2* nb_par * sizeof(double));
 	set->acc = malloc(2* nb_par * sizeof(double));
 	set->dmin = malloc(nb_par * sizeof(double));
-
-	for (i = 0; i<nb_par; i++)
+	set->force = malloc(2* nb_par * sizeof(double));
+	set->globId = malloc(nb_par * sizeof(int));
+	for (i = 0; i<nb_par; i++){
 		set->dmin[i] = DBL_MAX;
+		set->globId[i] = rank*nb_par + i;
+	}
 	return set;
 }
 
@@ -53,6 +56,7 @@ void pset_free(pset * set){
 	free(set->acc);
 	free(set->dmin);
 	free(set->m);
+	free(set->force);
 	free(set);
 }
 
@@ -72,7 +76,7 @@ void pset_print(pset * set)
 	int size = set->nb;
 	for (i = 0; i < size; ++i)
 	{
-		printf("#Particule numéro : %d, de masse %g\n", i, set->m[i]);
+		printf("#Particule numéro : %d, de masse %g\n", set->globId[i], set->m[i]);
 		printf("\tx:%g y:%g\n", set->pos[i], set->pos[i+ size]);
 		printf("\tvx:%g vy:%g\n",set->spd[i], set->spd[i+ size]);
 		printf("\tax:%g ay:%g\n",set->acc[i], set->acc[i+ size]);
@@ -138,7 +142,7 @@ void pset_init_orbit(pset * primary, pset *satellites)
 	for (int i = 0; i < size; ++i)
 	{
 		dmin += 500;
-		distance = dmin +  rand()% 400;
+		distance = dmin* satellites->globId[i] +  rand()% 50;
 		satellites->m[i] = primary->m[0] /2000;
 		satellites->pos[i] = primary->pos[0] -distance;
 		satellites->pos[i+size] = primary->pos[0+size];
@@ -180,7 +184,6 @@ void f_grav(pset * s1, pset* s2)
 	{
 		if (s1->m[i] != 0)
 		{
-			double force[2] = {0.0, 0.0};
 			for (j = 0; j < size2; ++j)
 			{
 				if(s2->m[j] != 0)
@@ -193,17 +196,26 @@ void f_grav(pset * s1, pset* s2)
 				if(d != 0 ){
 					s1->dmin[i] = MIN(s1->dmin[i], d);
 					inten = intensity(s1->m[i], s2->m[j], d);
-					force[0]+= inten *(s2->pos[j] - s1->pos[i]); 
-					force[1]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
+					s1->force[i]+= inten *(s2->pos[j] - s1->pos[i]); 
+					s1->force[i+size]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
 				}
 			}
-			// if(s1->m[i] == 0){
-			// 	s1->acc[i] = 0;
-			// 	s1->acc[i+size] = 0;
-			// }
-			//else
-			s1->acc[i] =force[0]/ s1->m[i];
-			s1->acc[i+size] = force[1]/ s1->m[i];
+
+		}
+	}
+}
+
+void update_acc(pset* s)
+{
+	int size = s->nb;
+	for (int i = 0; i < size; ++i)
+	{
+		if(s->m[i] != 0)
+		{
+			s->acc[i] = s->force[i]/ s->m[i];
+			s->acc[i+size] = s->force[i+size]/ s->m[i];
+			s->force[i] = 0;
+			s->force[i+size] = 0;
 		}
 	}
 }
@@ -237,6 +249,7 @@ void reinit_dmin(pset*s)
 
 void pset_step(pset * s, double dt)
 {
+	update_acc(s);
 	update_pos(s, dt);
 	update_spd(s, dt);
 	reinit_dmin(s);

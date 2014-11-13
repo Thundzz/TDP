@@ -13,6 +13,8 @@ struct p_set {
 	double * spd;
 	double * pos;
 	double * dmin;
+	double * force;
+	int * globId;
 };
 
 typedef struct p_set pset;
@@ -20,7 +22,7 @@ typedef struct p_set pset;
 
 /** Alloue un ensemble de nb_par particules.
  **/
-pset * pset_alloc(int nb_par);
+pset * pset_alloc(int nb_par, int rank);
 
 
 /** Copie le contenu du pset origin dans le pset dest

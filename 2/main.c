@@ -7,8 +7,8 @@
 int main()
 {
 	double dt = 500.0;
-	pset *s = pset_alloc(1);
-	pset *s2= pset_alloc(1);
+	pset *s = pset_alloc(1,0);
+	pset *s2= pset_alloc(1,0);
 	pset_init_rand(s);
 	pset_init_orbit(s, s2);
 
