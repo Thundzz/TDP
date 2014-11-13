@@ -3,8 +3,8 @@
 #include "dtcalc.h"
 #include "mpi.h"
 
-#define NB_PARTICLES 1
-#define NB_ITER 100
+#define NB_PARTICLES 2
+#define NB_ITER 400
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)

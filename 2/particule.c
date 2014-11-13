@@ -141,9 +141,8 @@ void pset_init_orbit(pset * primary, pset *satellites)
 	int size = satellites->nb;
 	for (int i = 0; i < size; ++i)
 	{
-		dmin += 500;
 		distance = dmin* satellites->globId[i] +  rand()% 50;
-		satellites->m[i] = primary->m[0] /2000;
+		satellites->m[i] = primary->m[0] /20000;
 		satellites->pos[i] = primary->pos[0] -distance;
 		satellites->pos[i+size] = primary->pos[0+size];
 		satellites->spd[i] = 0;

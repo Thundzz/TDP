@@ -45,6 +45,6 @@ def simulate(nbProcess, nbParticle)
 	system("eog #{giffile}")
 end
 
-simulate(4, 1)
+simulate(4, 2)
 
 #gen_plot_script("particles", 4,1)
