@@ -35,16 +35,16 @@ def gen_plot_script(filename, output, nbProc, nbParticle)
 end
 
 
-def simulate(nbProcess, nbParticle)
-	filename = "particles#{nbProcess}#{nbParticle}"
+def simulate(nbProcess, nbParticle, pattern)
+	filename = "particles#{nbProcess}#{nbParticle}#{pattern}"
 	plotfile = filename+".plt"
 	giffile = filename+".gif"
-	system("mpiexec -np #{nbProcess} ./simulation.out")
+	system("mpiexec -np #{nbProcess} ./simulation.out #{pattern}")
 	gen_plot_script(plotfile, giffile, nbProcess, nbParticle)
 	system("gnuplot #{plotfile}")
 	system("eog #{giffile}")
 end
 
-simulate(4, 2)
+simulate(2, 2, "random")
 
 #gen_plot_script("particles", 4,1)

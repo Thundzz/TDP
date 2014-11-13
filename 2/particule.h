@@ -3,7 +3,7 @@
 
 
 #define CONST_GRAV 6.6742e-11
-#define MIN_RAND 0
+#define MIN_RAND -1000
 #define MAX_RAND 1000
 
 struct p_set {

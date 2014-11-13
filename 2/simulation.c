@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "particule.h"
 #include "dtcalc.h"
 #include "mpi.h"
@@ -24,7 +25,7 @@ void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
 	MPI_Type_commit(MPI_PSET);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	double defdt = 500;
 	double dt = defdt;
@@ -35,22 +36,38 @@ int main(void)
   	MPI_Status send_stat, recv_stat;
   	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
 	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
+	char* pattern;
 
-	/* Génération d'un soleil */
-	pset * sun = pset_alloc(NB_PARTICLES, myrank);
-	pset_init_sun(sun);
+	if (argc > 1)
+		pattern = argv[1];
+	else
+		pattern = "random";
 
-	/* Initialisation du set de particules propre au processus. */
 	pset * s;
-	if(myrank == 0)
+	
+	if(!strcmp(pattern, "sun"))
 	{
-		s =sun;
+		/* Génération d'un soleil */
+		pset * sun = pset_alloc(NB_PARTICLES, myrank);
+		pset_init_sun(sun);
+
+		/* Initialisation du set de particules propre au processus. */
+		if(myrank == 0)
+		{
+			s =sun;
+		}
+		else
+		{
+			s = pset_alloc(NB_PARTICLES, myrank);
+			pset_init_orbit(sun, s);
+		}
 	}
 	else
 	{
 		s = pset_alloc(NB_PARTICLES, myrank);
-		pset_init_orbit(sun, s);
-	}
+		pset_init_rand(s);
+	}	
+
 	/* Initialisation des buffers.*/
 	pset * calc_buf = pset_alloc(NB_PARTICLES, myrank);
 	pset * comm_buf = pset_alloc(NB_PARTICLES, myrank);
