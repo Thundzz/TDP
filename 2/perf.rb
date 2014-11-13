@@ -21,10 +21,17 @@ def print_on_file(filename, s)
 	system("echo \"#{s}\" " + ">> #{filename}")	
 end
 
-def gen_plot_script(filename, nbProc, nbParticle)
-	system("cp  header.plt #{filename}.plt")
-	print_on_file filename+".plt", gen_plot_cmd(nbProc, nbParticle)
-	system("cat footer.plt >> #{filename}.plt")
+def gen_plot_script(filename, output, nbProc, nbParticle)
+	File.open(filename, 'w+') do |f|  
+		f.puts("set terminal gif animate delay 10\n"+
+				"set output '#{output}'\n"+
+				"stats 'datafile0' nooutput\n"+
+				"set xrange [-2000:2001]\n"+
+				"set yrange [-2000:2001]\n"+
+				"do for [i=1:int(STATS_blocks)] {\n\t"+
+				gen_plot_cmd(nbProc, nbParticle)+
+				"\n}\n")
+	end 
 end
 
 
@@ -33,11 +40,11 @@ def simulate(nbProcess, nbParticle)
 	plotfile = filename+".plt"
 	giffile = filename+".gif"
 	system("mpiexec -np #{nbProcess} ./simulation.out")
-	gen_plot_script(filename, nbProcess, nbParticle)
+	gen_plot_script(plotfile, giffile, nbProcess, nbParticle)
 	system("gnuplot #{plotfile}")
-	system("eog particles.gif")
+	system("eog #{giffile}")
 end
 
 simulate(4, 1)
 
-#gen_plot_script("plot42", 4,1)
+#gen_plot_script("particles", 4,1)
