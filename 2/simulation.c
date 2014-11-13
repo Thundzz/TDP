@@ -9,21 +9,17 @@
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
 {
-	MPI_Datatype type[6] = { MPI_INT , MPI_DOUBLE, MPI_DOUBLE,
-							 MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE }; 
-  	int blocklen[6] = {1, NB_PARTICLES, 2*NB_PARTICLES, 
-  					   2*NB_PARTICLES, 2*NB_PARTICLES, NB_PARTICLES}; 
+	MPI_Datatype type[3] = { MPI_INT , MPI_DOUBLE, MPI_DOUBLE}; 
+  	int blocklen[3] = {1, NB_PARTICLES, 2*NB_PARTICLES}; 
 	MPI_Aint i1,i2 ; 
 	MPI_Aint disp[6];
+
 	MPI_Get_address(p, &i1); 
 	MPI_Get_address(&p->nb, &i2); disp[0] = i2-i1;
 	MPI_Get_address(&p->m[0], &i2); disp[1] = i2-i1 ; 
 	MPI_Get_address(&p->pos[0], &i2); disp[2] = i2-i1;
-	MPI_Get_address(&p->spd[0], &i2); disp[3] = i2-i1 ;
-	MPI_Get_address(&p->acc[0], &i2); disp[4] = i2-i1 ; 
-	MPI_Get_address(&p->dmin[0], &i2); disp[5] = i2-i1;
 
-	MPI_Type_struct(6, blocklen, disp, type, MPI_PSET); 
+	MPI_Type_struct(3, blocklen, disp, type, MPI_PSET); 
 	MPI_Type_commit(MPI_PSET);
 }
 
