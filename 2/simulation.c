@@ -2,7 +2,7 @@
 #include <string.h>
 #include "particule.h"
 #include "dtcalc.h"
-#include "mpi.h"
+#include <mpi.h>
 
 #define NB_PARTICLES 2
 #define NB_ITER 200
