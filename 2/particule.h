@@ -21,6 +21,11 @@ typedef struct p_set pset;
  **/
 pset * pset_alloc(int nb_par);
 
+
+/** Copie le contenu du pset origin dans le pset dest
+ **/
+void pset_copy(pset * origin, pset * dest);
+
 /** Désallloue un ensemble de particules.
 **/
 void pset_free(pset * set);
@@ -28,7 +33,6 @@ void pset_free(pset * set);
 /** Initialise aléatoirement un set
 **/
 void pset_init_rand(pset * s);
-
 
 
 /** /!\ Suppose que le tailles de primaries et satellites sont égales

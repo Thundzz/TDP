@@ -1,4 +1,5 @@
 #include "particule.h"
+
 #include <stdio.h>
 
 #define NBITER 500

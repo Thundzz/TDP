@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 #include <sys/types.h>
@@ -44,6 +45,16 @@ void pset_free(pset * set){
 	free(set->acc);
 	free(set->m);
 	free(set);
+}
+
+void pset_copy(pset * origin, pset * dest){
+	int nb = origin-> nb;
+	int sd = sizeof(double);
+	dest->nb = origin->nb;
+	memcpy(dest->m, origin->m  , nb*sd);
+	memcpy(dest->acc, origin->acc, 2* nb*sd);
+	memcpy(dest->spd, origin->spd, 2* nb*sd);
+	memcpy(dest->pos, origin->pos, 2* nb*sd);
 }
 
 void pset_print(pset * set)

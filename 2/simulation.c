@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include "particule.h"
 #include "mpi.h"
 
@@ -35,7 +34,6 @@ void swap(pset* a, pset * b) {
 int main(void)
 {
 	double dt = 200.0;
-
 	/* Initialisation des constantes MPI */
 	int myrank, nb_processes;
   	MPI_Init( NULL, NULL ); 
@@ -75,15 +73,9 @@ int main(void)
 	
 	for (int i = 0; i < NB_ITER; ++i)
 	{
-		/* /!\ Cette partie peut facilement être factorisée.*/
-		/*On met à jour le nouveau calc buff en lui donnant la valeur
-		  locale mise à jour*/
-		int sd = sizeof(double);
-		calc_buf->nb = s->nb;
-		memcpy(calc_buf->m, s->m  , NB_PARTICLES*sd);
-		memcpy(calc_buf->acc, s->acc, 2* NB_PARTICLES*sd);
-		memcpy(calc_buf->spd, s->spd, 2* NB_PARTICLES*sd);
-		memcpy(calc_buf->pos, s->pos, 2* NB_PARTICLES*sd);
+		/* On copie le contenu de l'ensemble local dans le buffer d'envoi */
+		pset_copy(s, calc_buf);
+
 		for (int j = 0; j < nb_processes; ++j)
 		{
 			/* Envoi du buffer de calcul actuel. */
