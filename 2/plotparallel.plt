@@ -1,4 +1,4 @@
-set terminal gif animate delay 10
+set terminal gif animate delay 5
 set output 'particles.gif'
 stats 'datafile0' nooutput
 set xrange [-2000:2001]

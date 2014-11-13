@@ -4,7 +4,7 @@
 #include "mpi.h"
 
 #define NB_PARTICLES 2
-#define NB_ITER 100
+#define NB_ITER 500
 
 /* Fonction auxilliaire servant à initialiser le type Particule MPI*/
 void init_mpi_pset_type(MPI_Datatype * MPI_PSET, pset * p)
@@ -31,7 +31,7 @@ void swap(pset* a, pset * b) {
 
 int main(void)
 {
-	double defdt = 200.0;
+	double defdt = 1e6;
 	double dt = defdt;
 	/* Initialisation des constantes MPI */
 	int myrank, nb_processes;
@@ -41,10 +41,21 @@ int main(void)
   	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
 	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
-	/* Initialisation du set de particules propre au processus. */
-	pset * s = pset_alloc(NB_PARTICLES);
-	pset_init_rand(s);
+	/* Génération d'un soleil */
+	pset * sun = pset_alloc(NB_PARTICLES);
+	pset_init_sun(sun);
 
+	/* Initialisation du set de particules propre au processus. */
+	pset * s;
+	if(myrank == 0)
+	{
+		s =sun;
+	}
+	else
+	{
+		s = pset_alloc(NB_PARTICLES);
+		pset_init_orbit(sun, s);
+	}
 	/* Initialisation des buffers.*/
 	pset * calc_buf = pset_alloc(NB_PARTICLES);
 	pset * comm_buf = pset_alloc(NB_PARTICLES);

@@ -114,13 +114,19 @@ double v_orbit(double mass, double distance)
 
 void pset_init_sun(pset * sun)
 {
-	sun->m[0] = 1.0e10;
-	sun->pos[0] = 0;
-	sun->pos[1] = 0;
-	sun->spd[0] = 0;
-	sun->spd[1] = 0;
-	sun->acc[0] = 0;
-	sun->acc[1] = 0;
+	int i;
+	int size = sun->nb;
+	for (i = 0; i < size; i++)
+	{
+		sun->m[i] = 0;
+		sun->pos[i] = 0;
+		sun->pos[i+size] = 0;
+		sun->spd[i] = 0;
+		sun->spd[i+size] = 0;
+		sun->acc[i] = 0;
+		sun->acc[i+size] = 0;
+	}
+	sun->m[0] = 1e10;
 }
 
 void pset_init_orbit(pset * primary, pset *satellites)
@@ -130,8 +136,8 @@ void pset_init_orbit(pset * primary, pset *satellites)
 	int size = satellites->nb;
 	for (int i = 0; i < size; ++i)
 	{
-		dmin += 200;
-		distance = dmin +  rand()% 100;
+		dmin += 500;
+		distance = dmin +  rand()% 400;
 		satellites->m[i] = primary->m[0] /2000;
 		satellites->pos[i] = primary->pos[0] -distance;
 		satellites->pos[i+size] = primary->pos[0+size];
@@ -185,8 +191,14 @@ void f_grav(pset * s1, pset* s2)
 				force[1]+= inten *(s2->pos[j+size2] - s1->pos[i+size]);
 			}
 		}
-		s1->acc[i] =force[0]/ s1->m[i];
-		s1->acc[i+size] = force[1]/ s1->m[i];
+		if(s1->m[i] == 0){
+			s1->acc[i] = 0;
+			s1->acc[i+size] = 0;
+		}
+		else{
+			s1->acc[i] =force[0]/ s1->m[i];
+			s1->acc[i+size] = force[1]/ s1->m[i];
+		}
 	}
 }
 

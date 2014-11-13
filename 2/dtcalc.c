@@ -65,7 +65,8 @@ double dt_local_update(double defdt, pset *s)
 		accx = s->acc[i];
 		accy = s->acc[i+size];
 		dist = s->dmin[i];
-		newdt = MIN(newdt, dt_local_update_calc(dist, spdx, spdy, accx, accy));
+		if (!(s->m[i] ==0))
+			newdt = MIN(newdt, dt_local_update_calc(dist, spdx, spdy, accx, accy));
 	}
 	return newdt;
 }
