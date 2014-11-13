@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
+#include <mpi.h>
 #include "particule.h"
 #include "dtcalc.h"
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
-/** Calcule la solution réelle positive d'une équation du second degré ax*x + bx + c = 0
+/** Calcule la solution réelle positive d'une équation du second degré : 
+ *	ax*x + bx + c = 0, avec a strictement positif, b positif et c négatif.
+ *  Retourne DBL_MAX pour le cas ou aucune racine réelle positive existe 
+ *	ou si a et b sont nuls pour ne pas influencer la valeur de dtmin
  */
 
 double quad_eq_positive_sol(double a, double b, double c)
@@ -17,68 +22,57 @@ double quad_eq_positive_sol(double a, double b, double c)
 	if (a == 0.0 && b == 0.0)
 		return DBL_MAX;
 	else if (a == 0)
-		return -c/b;
+		return -c/b; //Toujours positif
 
 	double delta = b*b - 4.0*a*c;
 	if (delta > 0)
 	{
 		x1 = (-b + sqrt(delta)) / (2.0*a);
 		x2 = (b + sqrt(delta)) / (2.0*a); 
-		if (x1 > 0)
-			return x1;
-		else if(x2 > 0)
-			return x2;
-		else 
+		if (x1 > 0 && x2 > 0)
+			return MIN(x1, x2);
+		else if(x1 < 0 && x2 < 0)
 			return DBL_MAX;
+		else 
+			return MAX(x1, x2);
 	}
-	else if(delta == 0)
-		return - b/(2.0*a);
 	else
 	{
-		return DBL_MAX; 
+		return DBL_MAX; //Le cas delta = 0 donne x = -b/(2*a) toujours négatif
 	}
 }
 
-double dt_update_calc(double dt, double dist, double spdx1, double spdy1, double accx1, double accy1,
-					double spdx2, double spdy2, double accx2, double accy2)
+double dt_local_update_calc(double dist, double spdx, double spdy, 
+							double accx, double accy)	
 {
-	double newdt;
-	double newdt1;
-	double newdt2;
+	double acc = sqrt(accx*accx + accy*accy);
+	double spd = sqrt(spdx*spdx + spdy*spdy);
 
-	double acc1 = sqrt(accx1*accx1 + accy1*accy1);
-	double acc2 = sqrt(accx2*accx2 + accy2*accy2);
-	double spd1 = sqrt(spdx1*spdx1 + spdy1*spdy1);
-	double spd2 = sqrt(spdx2*spdx2 + spdy2*spdy2);
-
-	newdt1 = quad_eq_positive_sol(0.5*acc1, spd1, -0.1*dist);
-	newdt2 = quad_eq_positive_sol(0.5*acc2, spd2, -0.1*dist);
-
-	newdt = MIN(dt, MIN(newdt1, newdt2));
-	return newdt;
+	return quad_eq_positive_sol(0.5*acc, spd, -0.1*dist);
 }
 
-double dt_update(double dt, pset *s1, pset *s2)
+double dt_local_update(double defdt, pset *s, double* dmin)
 {
-	int i, j;
-	double x1, y1, x2, y2, dist;
-	double newdt = dt;
-	int size1 = s1->nb;
-	int size2 = s2->nb;
+	int i;
+	double spdx, spdy, accx, accy, dist;
+	double newdt = defdt;
+	int size = s->nb;
 
-	for (i = 0; i < size1; ++i)
+	for (i = 0; i < size; ++i)
 	{
-		for (j = 0; j < size2; ++j)
-		{
-			x1 = s1->pos[i];
-			x2 = s2->pos[j];
-			y1 = s1->pos[i+size1];
-			y2 = s2->pos[j+size2];
-			dist = distance(x1, y1, x2, y2);
-			newdt = dt_update_calc(dt, dist,
-								s1->spd[i], s1->spd[i+size1], s1->acc[i], s1->acc[i+size1],
-								s2->spd[i], s2->spd[i+size2], s2->acc[i], s2->acc[i+size2]);
-		}
+		spdx = s->spd[i];
+		spdy = s->spd[i+size];
+		accx = s->acc[i];
+		accy = s->acc[i+size];
+		dist = dmin[i];
+		newdt = MIN(newdt, dt_local_update_calc(dist, spdx, spdy, accx, accy));
 	}
 	return newdt;
+}
+
+double dt_global_update(double* locdt)
+{
+	double globdt;
+	MPI_Allreduce(locdt, &globdt, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+	return globdt;
 }

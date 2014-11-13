@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include "particule.h"
 #include "dtcalc.h"
 
 #define NBITER 100
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 int main()
 {
@@ -15,6 +17,7 @@ int main()
 	fprintf(fichier, "#Iteration X1 Y1 X2 Y2\n");
 	pset *s = pset_alloc(1);
 	pset *s2= pset_alloc(1);
+	double *dtmin = (double*)malloc(1*sizeof(double));
 	pset_init_rand(s);
 	pset_init_rand(s2);
 
@@ -29,6 +32,7 @@ int main()
 	x2 = s2->pos[0];
 	y2 = s2->pos[0+size2];
 	gap = distance(x1,y1,x2,y2);
+	dtmin[0] = gap;
 
 	f_grav(s, s2); //a(t=0)
 	f_grav(s2, s);
@@ -38,7 +42,9 @@ int main()
 
  	for (int i = 0; i < NBITER ; ++i)
  	{
-		dt = dt_update(defdt, s, s2); //t+dt
+		dt = MIN(dt_local_update(defdt, s, dtmin), 
+				dt_local_update(defdt, s2, dtmin)); //t+dt
+
 		printf("dt = %g\n", dt);
 		update_pos(s, dt); //m(t+dt)
 		update_pos(s2, dt);
@@ -63,6 +69,7 @@ int main()
 		y1 = y1new;
 		y2 = y2new;
 		gap = distance(x1new,y1new,x2new,y2new);
+		dtmin[0] = gap;
 
 		update_spd(s, dt); //v(t+dt) 
 		update_spd(s2, dt);

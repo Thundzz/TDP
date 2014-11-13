@@ -3,17 +3,17 @@
 
 #include "particule.h"
 
-/** Calcule le dt pour un couple de particules pour que la différence 
- *	entre la position à t+dt et la position à t de chacun de ces deux atomes ne dépasse pas 10%
- *  de la distance les séparant à l'instant t.
- *  Le premier argument est le minimum des dt précédemment calculés. 
- *	La fonction retourne le minimum entre ce dernier et le dt qui vient d'être calculé.
+/** Calcule le dt lié a un atome et la distance à son voisin le plus proche
  */
-double dt_update_calc(double dt, double dist, double spdx1, double spdy1, double accx1, double accy1,
-					double spdx2, double spdy2, double accx2, double accy2);
+double dt_local_update_calc(double dist, double spdx, double spdy, 
+							double accx, double accy);
 
-/** Retourne le minimum des dt pour chaque couple d'atomes de deux ensembles s1 et s2  
+/** Retourne le minimum local des dt liés aux atomes d'un set
  */
-double dt_update(double dt, pset *s1, pset *s2);
+double dt_local_update(double defdt, pset *s, double* dmin);
+
+/** Calcule le dt global par réduction
+ */
+double dt_global_update(double* locdt);
 
 #endif
