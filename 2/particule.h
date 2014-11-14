@@ -3,7 +3,7 @@
 
 
 #define CONST_GRAV 6.6742e-11
-#define MIN_RAND 0
+#define MIN_RAND -1000
 #define MAX_RAND 1000
 
 struct p_set {
@@ -12,6 +12,9 @@ struct p_set {
 	double * acc;
 	double * spd;
 	double * pos;
+	double * dmin;
+	double * force;
+	int * globId;
 };
 
 typedef struct p_set pset;
@@ -19,16 +22,35 @@ typedef struct p_set pset;
 
 /** Alloue un ensemble de nb_par particules.
  **/
-pset * pset_alloc(int nb_par);
+pset * pset_alloc(int nb_par, int rank);
+
+
+/** Copie le contenu du pset origin dans le pset dest
+ **/
+void pset_copy(pset * origin, pset * dest);
 
 /** Désallloue un ensemble de particules.
 **/
 void pset_free(pset * set);
 
+
+
 /** Initialise aléatoirement un set
 **/
 void pset_init_rand(pset * s);
 
+/** Initialise un ensemble de particule contenant
+ * une seule particule "soleil", de masse 1e10, 
+ * et placée en position (x=0, y=0)
+ **/
+void pset_init_sun(pset * sun);
+
+/** Suppose que le le pset primary contient une seule particule.
+* Initialise l'ensemble de de particules satellites de façon à ce que 
+* chaque particule de satellites orbite autour de la particule
+* de primary.
+*/
+void pset_init_orbit(pset * primary, pset *satellites);
 /** Affiche les infos sur les particules d'un ensemble
 **/
 void pset_print(pset * s);
