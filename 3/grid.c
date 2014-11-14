@@ -40,12 +40,35 @@ int main(int argc, char** argv) {
 	int nb_procs; 
 	int myrank; 
 	MPI_Comm comm_grid, comm_row, comm_col; 
+	MPI_Datatype type_block;
 
 	MPI_Init( NULL, NULL ); 
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank); 
 	MPI_Comm_size(MPI_COMM_WORLD, &nb_procs);
-	 
-	int dims[2] = {3,3};
+	
+	//double * a;
+	//if (myrank == 0)
+	//	a = matrix_load();
+	int N = 16;
+	//Global matrix
+	double a[N];
+	if(myrank == 0)
+	{
+		for (int i = 0; i < N; ++i)
+		{
+			a[i] = i;
+		}
+	}
+	//Local matrix
+	double b[4];
+    for (int j=0; j<4; j++) 
+    	b[j] = 0;
+
+	MPI_Type_vector(2, 2, N, MPI_DOUBLE, type_block_tmp);
+	MPI_Type_create_resized(type_block_tmp, 0, 2*sizeof(double), &type_block);
+	MPI_Type_commit(&type_block);
+
+	int dims[2] = {2,2};
 	int coords[2]; // coords[0] = i, coords[1] = j
 	int periods[2];
 	int reorder;
@@ -64,25 +87,31 @@ int main(int argc, char** argv) {
 	MPI_Cart_coords(comm_grid, myrank, 2, coords); //Outputs the i,j coordinates of the process
 	MPI_Cart_rank(comm_grid, coords, &grid_rank);  //Outputs the rank of the process
 
-	//Fill the processes according to their position
-
-	int W;
-	if (myrank == 1)
-		W = 0;
-	else
- 		W = (int)myrank+10;
-
 	subdivision[0] = 1;
-	subdivision[1] = 0; 
+	subdivision[1] = 0;
  	MPI_Cart_sub (comm_grid,subdivision,&comm_col); // Communicator between lines
  	subdivision[0] = 0;
 	subdivision[1] = 1; 
  	MPI_Cart_sub (comm_grid,subdivision,&comm_row); // Communicator between row
 
-	//MPI_Scatter (V, 1, MPI_INT ,&W,1, MPI_INT ,1, comm_row);
-	MPI_Bcast (&W, 1, MPI_INT ,1, comm_row); 
+ 	int counts[4];
+	int disps[4];
+	for (int ii=0; ii<2; ii++) {
+        for (int jj=0; jj<2; jj++) {
+            disps[ii*2+jj] = ii*4*2+jj*2;
+            counts [ii*2+jj] = 1;
+        }
+    }
 
-	printf("Rang %2d Coordonnées (%d,%d) : W %d.\n",myrank,coords[0],coords[1],W); 
+	MPI_Scatterv(a, counts, disps, type_block, b, 4, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast (&W, 1, MPI_INT ,1, comm_row); 
+
+	for (int ii=0; ii<2; ii++) {
+        for (int jj=0; jj<2; jj++) {
+            disps[ii*2+jj] = ii*4*2+jj*2;
+            counts [ii*2+jj] = 1;
+        }
+    }
 
 	MPI_Finalize();
 	return 0;
