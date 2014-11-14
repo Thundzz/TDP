@@ -43,7 +43,24 @@ void matrix_print(FILE* stream, matrix * m)
 	}
 }
 
-void matrix_store(const char * filename, matrix * m);
+void matrix_store(const char * filename, matrix * m){
+	FILE * file = fopen(filename, "w+");
+	if(file == NULL){
+		fprintf(stderr, "%s: %s\n", filename, "Error while opening the write file.");
+		exit(EXIT_FAILURE);
+	}
+	int size = m->size ;
+	fprintf(file, "%d\n", size);
+	for (int i = 0; i < size; ++i)
+	{
+		for (int j = 0; j < size; ++j)
+		{
+			fprintf(file, "%lf ", m->content[i+size*j]);
+		}
+		fprintf(file, "\n");
+	}
+	fclose(file);
+}
 
 void matrix_dispatch(matrix* m);
 
