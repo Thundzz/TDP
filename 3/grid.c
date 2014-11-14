@@ -24,11 +24,11 @@
 // 	int k;
 // 	for (k = 0; k < N; k+=Nb)
 // 	{	
-// 		/* If I am i+k%N proc of the line
+// 		 If I am i+k%N proc of the line
 // 		 * 	Bcast_line(A[i][i+k%N]) 
 // 		 * Else
 // 		 * 	recv(A) from the i+k%N proc of the line
-// 		 */
+		 
 // 		cblas_dgemm_scalaire(Nb, A, B, C);  //Cij = A[i][i+k%N]*B[i+k%N][j]
 // 		/* send(B) to top neighbour
 // 		 */
@@ -36,7 +36,7 @@
 // }
 
 
-int main(int argc, char** argv) {
+int main(void) {
 	int nb_procs; 
 	int myrank; 
 	MPI_Comm comm_grid, comm_row, comm_col; 

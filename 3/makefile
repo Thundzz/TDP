@@ -1,7 +1,8 @@
-CC=gcc
+CC=mpicc
 CFLAGS= -W -Wall -g -O2 -std=c99
 LDFLAGS= -W -Wall -g -O2 -lm
-EXEC=
+LIBFILES= matrix.o
+EXEC=grid.out
 BENCH=
 TEST=test_matrix.out
 
@@ -12,9 +13,11 @@ test: $(TEST)
 send:
 	scp * formation:TDP/3
 
-test_%.out: test_%.o %.o matrix.o
+%.out: %.o $(LIBFILES)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
+test_%.out: test_%.o %.o $(LIBFILES)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
