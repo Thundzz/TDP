@@ -6,12 +6,13 @@
 matrix * matrix_load(const char * filename){
 	FILE * file = fopen(filename, "r");
 	if(file == NULL){
-		fprintf(stderr, "%s: %s\n", filename, "Error while opening the matrix file.");
+		fprintf(stderr, "%s: %s\n", filename,
+			    "Error while opening the matrix file.");
 		exit(EXIT_FAILURE);
 	}
-	int size;
+	int size, scanned;
 	matrix * m = malloc(sizeof(matrix));
-	fscanf(file, "%d\n", &size);
+	scanned = fscanf(file, "%d\n", &size);
 	m->size = size;
 	m->content = (double *) malloc(size*size* sizeof(double));
 
@@ -19,7 +20,9 @@ matrix * matrix_load(const char * filename){
 	{
 		for (int j = 0; j < size; ++j)
 		{
-			fscanf(file, "%lf", &m->content[i+size*j]);
+			scanned= fscanf(file, "%lf", &m->content[i+size*j]);
+			if (scanned !=1)
+				fprintf(stderr, "%s: Warning. Problem while parsing the matrix file.\n", filename);
 		}
 	}
 	fclose(file);
