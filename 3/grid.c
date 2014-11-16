@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "mpi.h"
 
 // void cblas_dgemm_scalaire(const int Nb, const double *A, const double *B, double *C)
@@ -35,49 +37,47 @@
 // 	}
 // }
 
+double* partition_matrix(double *a,
+						int N, int np_row, int np_col, 
+						MPI_Datatype *type_block)
+{
+	MPI_Datatype type_block_tmp;
 
-int main(int argc, char** argv) {
-	int nb_procs; 
-	int myrank; 
-	MPI_Comm comm_grid, comm_row, comm_col; 
-	MPI_Datatype type_block;
+	int NB_r = N/np_row; //Nb of lines per block
+	int NB_c = N/np_col; //Nb of columns per block
+	int np = np_row * np_col; //Nb of procs
 
-	MPI_Init( NULL, NULL ); 
-	MPI_Comm_rank( MPI_COMM_WORLD, &myrank); 
-	MPI_Comm_size(MPI_COMM_WORLD, &nb_procs);
-	
-	//double * a;
-	//if (myrank == 0)
-	//	a = matrix_load();
-	int N = 16;
-	//Global matrix
-	double a[N];
-	if(myrank == 0)
-	{
-		for (int i = 0; i < N; ++i)
-		{
-			a[i] = i;
-		}
-	}
-	//Local matrix
-	double b[4];
-    for (int j=0; j<4; j++) 
-    	b[j] = 0;
+	double* b = malloc(NB_r*NB_c*sizeof(double));
 
-	MPI_Type_vector(2, 2, N, MPI_DOUBLE, type_block_tmp);
-	MPI_Type_create_resized(type_block_tmp, 0, 2*sizeof(double), &type_block);
-	MPI_Type_commit(&type_block);
+	MPI_Type_vector(NB_r, NB_c, N, MPI_DOUBLE, &type_block_tmp);
+	MPI_Type_create_resized(type_block_tmp, 0, sizeof(double), type_block);
+	MPI_Type_commit(type_block);
 
-	int dims[2] = {2,2};
+ 	int counts[np];
+	int disps[np];
+	for (int i=0; i<np_row; i++) {
+        for (int j=0; j<np_col; j++) {
+            disps[i*np_col+j] = i*N*NB_r+j*NB_c;
+            counts [i*np_col+j] = 1;
+        }
+    }
+    MPI_Scatterv(a, counts, disps, *type_block, b, NB_r*NB_c, MPI_DOUBLE, 0, MPI_COMM_WORLD);	
+
+    return b;
+}
+
+void create_grid(int myrank, int np_row, int np_col,
+					MPI_Comm* comm_row, MPI_Comm* comm_col)
+{
+	MPI_Comm comm_grid; 
+
+	int dims[2] = {np_row, np_col};
 	int coords[2]; // coords[0] = i, coords[1] = j
 	int periods[2];
 	int reorder;
 
 	int grid_rank;
 	int subdivision[2];
-
-	//Receive matrix size from file
-	//dims[0] = dims[1] = matrix_size/nb_procs + (matrix_size%nb_procs != 0); // Ceil round
 
 	periods[0] = 0 ; 
 	periods[1] = 1 ;
@@ -89,30 +89,70 @@ int main(int argc, char** argv) {
 
 	subdivision[0] = 1;
 	subdivision[1] = 0;
- 	MPI_Cart_sub (comm_grid,subdivision,&comm_col); // Communicator between lines
+ 	MPI_Cart_sub (comm_grid,subdivision,comm_col); // Communicator between lines
  	subdivision[0] = 0;
 	subdivision[1] = 1; 
- 	MPI_Cart_sub (comm_grid,subdivision,&comm_row); // Communicator between row
+ 	MPI_Cart_sub (comm_grid,subdivision,comm_row); // Communicator between row
+}
 
- 	int counts[4];
-	int disps[4];
-	for (int ii=0; ii<2; ii++) {
-        for (int jj=0; jj<2; jj++) {
-            disps[ii*2+jj] = ii*4*2+jj*2;
-            counts [ii*2+jj] = 1;
-        }
-    }
+int main(int argc, char** argv) {
+	int np; 
+	int myrank; 
 
-	MPI_Scatterv(a, counts, disps, type_block, b, 4, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast (&W, 1, MPI_INT ,1, comm_row); 
+	MPI_Init( NULL, NULL ); 
+	MPI_Comm_rank( MPI_COMM_WORLD, &myrank); 
+	MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-	for (int ii=0; ii<2; ii++) {
-        for (int jj=0; jj<2; jj++) {
-            disps[ii*2+jj] = ii*4*2+jj*2;
-            counts [ii*2+jj] = 1;
-        }
-    }
+	//Global matrix
+	int N = 8;
+	double a[N*N];
+	if(myrank == 0)
+	{
+		for (int i = 0; i < N*N; ++i)
+		{
+			a[i] = i;
+		}
+	}
 
+	if(myrank == 0)
+	{
+		printf("=== Global matrix ===\n");
+		for (int ii=0; ii<N; ii++) {
+	        for (int jj=0; jj<N; jj++) {
+	            printf("%g ", a[ii*N+jj]);
+	        }
+	        printf("\n");
+	    }
+	}
+	//End of Global matrix
+
+	int NB = sqrt(N*N/np); //Dimension of a block
+	
+	double* b;
+	MPI_Datatype type_block;
+	b = partition_matrix(a, N, N/NB, N/NB, &type_block);
+
+ 	MPI_Comm comm_row, comm_col; 
+ 	create_grid(myrank, N/NB, N/NB, &comm_row, &comm_col);
+
+	//MPI_Bcast (b, NB*NB, MPI_DOUBLE , 0, comm_col); 
+
+	for (int i = 0; i < np; ++i)
+	{
+		if(myrank == i)
+		{
+			printf("=== This is proc %d ===\n", i);
+			for (int ii=0; ii<NB; ii++) {
+		        for (int jj=0; jj<NB; jj++) {
+		            printf("%g ", b[ii*NB+jj]);
+		        }
+		        printf("\n");
+		    }
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+
+	free(b);
 	MPI_Finalize();
 	return 0;
 }
