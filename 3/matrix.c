@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-matrix * matrix_load(const char * filename){
+int matrix_load(matrix* m, const char * filename){
 	FILE * file = fopen(filename, "r");
 	if(file == NULL){
 		fprintf(stderr, "%s: %s\n", filename,
@@ -11,7 +11,7 @@ matrix * matrix_load(const char * filename){
 		exit(EXIT_FAILURE);
 	}
 	int size, scanned;
-	matrix * m = malloc(sizeof(matrix));
+	//m = malloc(sizeof(matrix));
 	scanned = fscanf(file, "%d\n", &size);
 	m->size = size;
 	m->content = (double *) malloc(size*size* sizeof(double));
@@ -26,11 +26,11 @@ matrix * matrix_load(const char * filename){
 		}
 	}
 	fclose(file);
-	return m;
+	return size;
 }
 void matrix_free(matrix * m){
 	free (m->content);
-	free (m);	
+	//free (m);	
 }
 
 void matrix_print(FILE* stream, matrix * m)

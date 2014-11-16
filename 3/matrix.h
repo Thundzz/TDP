@@ -21,7 +21,7 @@ typedef struct Matrix{
  *  <a10> <a11> <a12> ... <a1N>
  *	...
  */
-matrix * matrix_load(const char * filename);
+int matrix_load(matrix* m, const char * filename);
 
 /** Prend en argument un nom de fichier et une matrice,
  * et sauvegarde cette matrice dans le fichier en question

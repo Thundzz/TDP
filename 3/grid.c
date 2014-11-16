@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include "mpi.h"
+#include "matrix.h"
 
 // void cblas_dgemm_scalaire(const int Nb, const double *A, const double *B, double *C)
 // {
@@ -98,40 +99,43 @@ void create_grid(int myrank, int np_row, int np_col,
 int main(int argc, char** argv) {
 	int np; 
 	int myrank; 
+	int N;
 
 	MPI_Init( NULL, NULL ); 
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank); 
 	MPI_Comm_size(MPI_COMM_WORLD, &np);
 
 	//Global matrix
-	int N = 8;
-	double a[N*N];
+	matrix a;
+	//double a[N*N];
 	if(myrank == 0)
 	{
-		for (int i = 0; i < N*N; ++i)
-		{
-			a[i] = i;
-		}
+		N = matrix_load(&a, "mat_grid.dat");
+		// for (int i = 0; i < N*N; ++i)
+		// {
+		// 	a[i] = i;
+		// }
 	}
-
+	MPI_Bcast (&N, 1, MPI_INT , 0, MPI_COMM_WORLD); 
+	
 	if(myrank == 0)
 	{
-		printf("=== Global matrix ===\n");
+		printf("=== Global matrix of dim %d===\n", N);
 		for (int ii=0; ii<N; ii++) {
 	        for (int jj=0; jj<N; jj++) {
-	            printf("%g ", a[ii*N+jj]);
+	            printf("%g ", a.content[ii*N+jj]);
 	        }
 	        printf("\n");
 	    }
 	}
 	//End of Global matrix
 
-	int np_r = 2; //Number of procs per row
-	int np_c = 4; //Number of procs per column
+	int np_r = 1; //Number of procs per row
+	int np_c = 1; //Number of procs per column
 
 	double* b;
 	MPI_Datatype type_block;
-	b = partition_matrix(a, N, np_r, np_c, &type_block);
+	b = partition_matrix(a.content, N, np_r, np_c, &type_block);
 
  	MPI_Comm comm_row, comm_col; 
  	create_grid(myrank, np_r, np_c, &comm_row, &comm_col);
@@ -153,6 +157,8 @@ int main(int argc, char** argv) {
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
+	if(myrank == 0)
+		matrix_free(&a);
 	free(b);
 	MPI_Finalize();
 	return 0;
