@@ -1,7 +1,7 @@
-#include "matrix.h"
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "matrix.h"
 
 int matrix_load(matrix* m, const char * filename){
 	FILE * file = fopen(filename, "r");
