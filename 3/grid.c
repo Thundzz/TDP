@@ -38,14 +38,14 @@
 // }
 
 double* partition_matrix(double *a,
-						int N, int np_row, int np_col, 
+						int N, int np_r, int np_c, 
 						MPI_Datatype *type_block)
 {
 	MPI_Datatype type_block_tmp;
 
-	int NB_r = N/np_row; //Nb of lines per block
-	int NB_c = N/np_col; //Nb of columns per block
-	int np = np_row * np_col; //Nb of procs
+	int NB_r = N/np_c; //Nb of lines per block
+	int NB_c = N/np_r; //Nb of columns per block
+	int np = np_r * np_c; //Nb of procs
 
 	double* b = malloc(NB_r*NB_c*sizeof(double));
 
@@ -55,10 +55,10 @@ double* partition_matrix(double *a,
 
  	int counts[np];
 	int disps[np];
-	for (int i=0; i<np_row; i++) {
-        for (int j=0; j<np_col; j++) {
-            disps[i*np_col+j] = i*N*NB_r+j*NB_c;
-            counts [i*np_col+j] = 1;
+	for (int i=0; i<np_c; i++) {
+        for (int j=0; j<np_r; j++) {
+            disps[i*np_r+j] = i*N*NB_r+j*NB_c;
+            counts [i*np_r+j] = 1;
         }
     }
     MPI_Scatterv(a, counts, disps, *type_block, b, NB_r*NB_c, MPI_DOUBLE, 0, MPI_COMM_WORLD);	
@@ -126,25 +126,26 @@ int main(int argc, char** argv) {
 	}
 	//End of Global matrix
 
-	int NB = sqrt(N*N/np); //Dimension of a block
-	
+	int np_r = 2; //Number of procs per row
+	int np_c = 4; //Number of procs per column
+
 	double* b;
 	MPI_Datatype type_block;
-	b = partition_matrix(a, N, N/NB, N/NB, &type_block);
+	b = partition_matrix(a, N, np_r, np_c, &type_block);
 
  	MPI_Comm comm_row, comm_col; 
- 	create_grid(myrank, N/NB, N/NB, &comm_row, &comm_col);
+ 	create_grid(myrank, np_r, np_c, &comm_row, &comm_col);
 
 	//MPI_Bcast (b, NB*NB, MPI_DOUBLE , 0, comm_col); 
 
-	for (int i = 0; i < np; ++i)
+	for (int k = 0; k < np; ++k)
 	{
-		if(myrank == i)
+		if(myrank == k)
 		{
-			printf("=== This is proc %d ===\n", i);
-			for (int ii=0; ii<NB; ii++) {
-		        for (int jj=0; jj<NB; jj++) {
-		            printf("%g ", b[ii*NB+jj]);
+			printf("=== This is proc %d ===\n", k);
+			for (int i=0; i<N/np_c; i++) {
+		        for (int j=0; j<N/np_r; j++) {
+		            printf("%g ", b[i*N/np_r+j]);
 		        }
 		        printf("\n");
 		    }
