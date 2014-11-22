@@ -3,6 +3,20 @@
 
 #include "matrix.h"
 
+
+void matrix_zero(matrix* m, int size){
+	m->size = size;
+	m->content = (double *) malloc(size*size* sizeof(double));
+
+	for (int i = 0; i < size; ++i)
+	{
+		for (int j = 0; j < size; ++j)
+		{
+			m->content[i+size*j] = 0;
+		}
+	}
+}
+
 int matrix_load(matrix* m, const char * filename){
 	FILE * file = fopen(filename, "r");
 	if(file == NULL){
