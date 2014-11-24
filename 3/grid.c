@@ -20,9 +20,8 @@ void cblas_dgemm_scalaire(const int N,
 	}
 }
 
-void proc(int N, int Nb, 
+void prod_matrix(int N, int Nb, int myrank,
 			double* bl_a, double* bl_b, double* bl_c,
-			int myrank, int np, int np_c,
 			MPI_Comm comm_grid, MPI_Comm comm_col, MPI_Comm comm_row)
 {
 	int k;
@@ -30,18 +29,19 @@ void proc(int N, int Nb,
 	int coords[2];
 	MPI_Status st;
 
+	int gd = N/Nb;
 	for (int i = 0; i < Nb*Nb; ++i)
 	{
 		my_a[i] = bl_a[i];
 	}
 
 	MPI_Cart_coords(comm_grid, myrank, 2, coords);
-	int sndto = (((coords[0]-1)%np_c) +np_c) %np_c;
-	int recvfrom = (coords[0]+1)%np_c;
+	int sndto = (((coords[0]-1)%gd) +gd) %gd;
+	int recvfrom = (coords[0]+1)%gd;
 	int myrow = coords[0];
 	int mycol = coords[1];
 
-	for (k = 0; k < np_c; k++)
+	for (k = 0; k < gd; k++)
 	{	
 		/* If I am i+k%N proc of the line
 		 * 	Bcast_line(A[i][i+k%N]) 
@@ -49,14 +49,14 @@ void proc(int N, int Nb,
 		 * 	recv(A) from the i+k%N proc of the line
 		 */
 
-		if(mycol == (myrow+k)%np_c)
+		if(mycol == (myrow+k)%gd)
 		{
 			for (int i = 0; i < Nb*Nb; ++i)
 			{
 				bl_a[i] = my_a[i];
 			}
 		}
-		MPI_Bcast(bl_a, N*N, MPI_DOUBLE, (myrow+k)%np_c, comm_row);
+		MPI_Bcast(bl_a, N*N, MPI_DOUBLE, (myrow+k)%gd, comm_row);
 
 
 	// for (int l = 0; l < np; ++l)
@@ -83,38 +83,60 @@ void proc(int N, int Nb,
 }
 
 double* partition_matrix(double *a,
-						int N, int np_r, int np_c, 
+						int N, int gd, 
 						MPI_Datatype *type_block)
 {
 	MPI_Datatype type_block_tmp;
 
-	int NB_r = N/np_c; //Nb of lines per block
-	int NB_c = N/np_r; //Nb of columns per block
-	int np = np_r * np_c; //Nb of procs
+	int NB = N/gd;
 
-	double* b = malloc(NB_r*NB_c*sizeof(double));
+	double* b = malloc(NB*NB*sizeof(double));
 
-	MPI_Type_vector(NB_r, NB_c, N, MPI_DOUBLE, &type_block_tmp);
+	MPI_Type_vector(NB, NB, N, MPI_DOUBLE, &type_block_tmp);
 	MPI_Type_create_resized(type_block_tmp, 0, sizeof(double), type_block);
 	MPI_Type_commit(type_block);
 
- 	int counts[np];
-	int disps[np];
-	for (int i=0; i<np_c; i++) {
-        for (int j=0; j<np_r; j++) {
-            disps[i*np_r+j] = i*N*NB_r+j*NB_c;
-            counts [i*np_r+j] = 1;
+ 	int counts[gd*gd];
+	int disps[gd*gd];
+	for (int i=0; i<gd; i++) {
+        for (int j=0; j<gd; j++) {
+            disps[i*gd+j] = i*N*NB+j*NB;
+            counts [i*gd+j] = 1;
         }
     }
-    MPI_Scatterv(a, counts, disps, *type_block, b, NB_r*NB_c, MPI_DOUBLE, 0, MPI_COMM_WORLD);	
+    MPI_Scatterv(a, counts, disps, *type_block, b, NB*NB, MPI_DOUBLE, 0, MPI_COMM_WORLD);	
 
     return b;
 }
 
-void create_grid(int myrank, int np_r, int np_c,
+matrix gather_matrix(double* c,
+					int N, int gd, 
+					MPI_Datatype * type_block)
+{
+	matrix res;
+	matrix_zero(&res, N);
+	
+	int NB = N/gd;
+
+	int counts[gd*gd];
+	int disps[gd*gd];
+	for (int i=0; i<gd; i++) {
+        for (int j=0; j<gd; j++) {
+            disps[i*gd+j] = i*N*NB+j*NB;
+            counts [i*gd+j] = 1;
+        }
+    }
+	MPI_Gatherv(c, NB*NB, MPI_DOUBLE,
+               res.content, counts, disps, *type_block,
+               0, MPI_COMM_WORLD);
+
+	return res;
+}
+
+void create_grid(int myrank, int gd,
 					MPI_Comm* comm_grid, MPI_Comm* comm_row, MPI_Comm* comm_col)
 {
-	int dims[2] = {np_r, np_c};
+	int dims[2] = {gd, gd};
 	int coords[2]; // coords[0] = i, coords[1] = j
 	int periods[2];
 	int reorder;
