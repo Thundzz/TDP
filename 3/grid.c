@@ -5,7 +5,7 @@
 #include "matrix.h"
 
 void cblas_dgemm_scalaire(const int N,
-							const double *A, const double *B, double *C)
+	const double *A, const double *B, double *C)
 {
 	int i, j, k;
 	for (i = 0; i < N; ++i)
@@ -21,8 +21,8 @@ void cblas_dgemm_scalaire(const int N,
 }
 
 void prod_matrix(int N, int Nb, int myrank,
-			double* bl_a, double* bl_b, double* bl_c,
-			MPI_Comm comm_grid, MPI_Comm comm_col, MPI_Comm comm_row)
+	double* bl_a, double* bl_b, double* bl_c,
+	MPI_Comm comm_grid, MPI_Comm comm_col, MPI_Comm comm_row)
 {
 	int k;
 	double my_a[Nb*Nb];
@@ -49,42 +49,26 @@ void prod_matrix(int N, int Nb, int myrank,
 		 * 	recv(A) from the i+k%N proc of the line
 		 */
 
-		if(mycol == (myrow+k)%gd)
-		{
-			for (int i = 0; i < Nb*Nb; ++i)
-			{
-				bl_a[i] = my_a[i];
-			}
-		}
+		 if(mycol == (myrow+k)%gd)
+		 {
+		 	for (int i = 0; i < Nb*Nb; ++i)
+		 	{
+		 		bl_a[i] = my_a[i];
+		 	}
+		 }
 		MPI_Bcast(bl_a, N*N, MPI_DOUBLE, (myrow+k)%gd, comm_row);
 
-
-	// for (int l = 0; l < np; ++l)
-	// {
-	// 	if(myrank == l)
-	// 	{
-	// 		printf("=== This is k=%d on proc %d line %d===\n", k, l, myrow);
-	// 		for (int i=0; i<Nb; i++) {
-	// 	        for (int j=0; j<Nb; j++) {
-	// 	            printf("%g ", bl_a[i*Nb+j]);
-	// 	        }
-	// 	        printf("\n");
-	// 	    }
-	// 	}
-	// 	MPI_Barrier(MPI_COMM_WORLD);
-	// }
-	
-	cblas_dgemm_scalaire(Nb, bl_a, bl_b, bl_c);  //Cij = A[i][i+k%N]*B[i+k%N][j]
-		/* send(B) to upper neighbour
-		 */
-	MPI_Sendrecv_replace(bl_b, Nb*Nb, MPI_DOUBLE, sndto, 0, 
-						recvfrom, 0, comm_col, &st);
+		cblas_dgemm_scalaire(Nb, bl_a, bl_b, bl_c);  //Cij = A[i][i+k%N]*B[i+k%N][j]
+			/* send(B) to upper neighbour
+			 */
+		MPI_Sendrecv_replace(bl_b, Nb*Nb, MPI_DOUBLE, sndto, 0, 
+			recvfrom, 0, comm_col, &st);
 	}
 }
 
 double* partition_matrix(double *a,
-						int N, int gd, 
-						MPI_Datatype *type_block)
+	int N, int gd, 
+	MPI_Datatype *type_block)
 {
 	MPI_Datatype type_block_tmp;
 
@@ -96,22 +80,22 @@ double* partition_matrix(double *a,
 	MPI_Type_create_resized(type_block_tmp, 0, sizeof(double), type_block);
 	MPI_Type_commit(type_block);
 
- 	int counts[gd*gd];
+	int counts[gd*gd];
 	int disps[gd*gd];
 	for (int i=0; i<gd; i++) {
-        for (int j=0; j<gd; j++) {
-            disps[i*gd+j] = i*N*NB+j*NB;
-            counts [i*gd+j] = 1;
-        }
-    }
-    MPI_Scatterv(a, counts, disps, *type_block, b, NB*NB, MPI_DOUBLE, 0, MPI_COMM_WORLD);	
+		for (int j=0; j<gd; j++) {
+			disps[i*gd+j] = i*N*NB+j*NB;
+			counts [i*gd+j] = 1;
+		}
+	}
+	MPI_Scatterv(a, counts, disps, *type_block, b, NB*NB, MPI_DOUBLE, 0, MPI_COMM_WORLD);	
 
-    return b;
+	return b;
 }
 
 matrix gather_matrix(double* c,
-					int N, int gd, 
-					MPI_Datatype * type_block)
+	int N, int gd, 
+	MPI_Datatype * type_block)
 {
 	matrix res;
 	matrix_zero(&res, N);
@@ -121,20 +105,20 @@ matrix gather_matrix(double* c,
 	int counts[gd*gd];
 	int disps[gd*gd];
 	for (int i=0; i<gd; i++) {
-        for (int j=0; j<gd; j++) {
-            disps[i*gd+j] = i*N*NB+j*NB;
-            counts [i*gd+j] = 1;
-        }
-    }
+		for (int j=0; j<gd; j++) {
+			disps[i*gd+j] = i*N*NB+j*NB;
+			counts [i*gd+j] = 1;
+		}
+	}
 	MPI_Gatherv(c, NB*NB, MPI_DOUBLE,
-               res.content, counts, disps, *type_block,
-               0, MPI_COMM_WORLD);
+		res.content, counts, disps, *type_block,
+		0, MPI_COMM_WORLD);
 
 	return res;
 }
 
 void create_grid(int myrank, int gd,
-					MPI_Comm* comm_grid, MPI_Comm* comm_row, MPI_Comm* comm_col)
+	MPI_Comm* comm_grid, MPI_Comm* comm_row, MPI_Comm* comm_col)
 {
 	int dims[2] = {gd, gd};
 	int coords[2]; // coords[0] = i, coords[1] = j
@@ -156,7 +140,7 @@ void create_grid(int myrank, int gd,
 	subdivision[1] = 0;
  	MPI_Cart_sub (*comm_grid,subdivision,comm_col); // Communicator between lines
  	subdivision[0] = 0;
-	subdivision[1] = 1; 
+ 	subdivision[1] = 1; 
  	MPI_Cart_sub (*comm_grid,subdivision,comm_row); // Communicator between row
 }
 
