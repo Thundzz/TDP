@@ -66,18 +66,6 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	//Print global matrix A
-	if(myrank == 0)
-	{
-		printf("=== Global matrix of dim %d===\n", N);
-		for (int ii=0; ii<N; ii++) {
-	        for (int jj=0; jj<N; jj++) {
-	            printf("%g ", a.content[ii*N+jj]);
-	        }
-	        printf("\n");
-	    }
-	}
-
 	double *bl_a, *bl_b;
 	MPI_Datatype type_block;
 	bl_a = partition_matrix(a.content, N, gd, &type_block);
@@ -86,20 +74,6 @@ int main(int argc, char** argv) {
  	MPI_Comm comm_row, comm_col, comm_grid; 
  	create_grid(myrank, gd, &comm_grid, &comm_row, &comm_col);
 
-	for (int k = 0; k < np; ++k)
-	{
-		if(myrank == k)
-		{
-			printf("=== This is proc %d ===\n", k);
-			for (int i=0; i<N/gd; i++) {
-		        for (int j=0; j<N/gd; j++) {
-		            printf("%g ", bl_b[i*N/gd+j]);
-		        }
-		        printf("\n");
-		    }
-		}
-		MPI_Barrier(MPI_COMM_WORLD);
-	}
 
 	double* bl_c = malloc(N/gd*N/gd*sizeof(double));
 	for (int i = 0; i < N/gd*N/gd; ++i)
@@ -111,32 +85,10 @@ int main(int argc, char** argv) {
 			bl_a, bl_b, bl_c,
 			comm_grid, comm_col, comm_row);
 
-	for (int k = 0; k < np; ++k)
-	{
-		if(myrank == k)
-		{
-			printf("=== This is proc %d ===\n", k);
-			for (int i=0; i<N/gd; i++) {
-		        for (int j=0; j<N/gd; j++) {
-		            printf("%g ", bl_c[i*N/gd+j]);
-		        }
-		        printf("\n");
-		    }
-		}
-		MPI_Barrier(MPI_COMM_WORLD);
-	}
-
 	matrix c = gather_matrix(bl_c, N, gd, &type_block);
 
 	if(myrank == 0)
 	{
-		printf("=== Final matrix ===\n");
-		for (int i=0; i<N; i++) {
-		    for (int j=0; j<N; j++) {
-		        printf("%g ", c.content[i*N+j]);
-		    }
-		    printf("\n");
-	    }
 	    matrix_store("output.dat", &c);
 	}
 	if(myrank == 0){

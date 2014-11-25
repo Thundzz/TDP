@@ -56,7 +56,7 @@ void prod_matrix(int N, int Nb, int myrank,
 		 		bl_a[i] = my_a[i];
 		 	}
 		 }
-		MPI_Bcast(bl_a, N*N, MPI_DOUBLE, (myrow+k)%gd, comm_row);
+		MPI_Bcast(bl_a, Nb*Nb, MPI_DOUBLE, (myrow+k)%gd, comm_row);
 
 		cblas_dgemm_scalaire(Nb, bl_a, bl_b, bl_c);  //Cij = A[i][i+k%N]*B[i+k%N][j]
 			/* send(B) to upper neighbour

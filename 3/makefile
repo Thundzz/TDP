@@ -2,7 +2,7 @@ CC=mpicc
 CFLAGS= -W -Wall -g -O2 -std=c99
 LDFLAGS= -W -Wall -g -O2 -lm
 LIBFILES= matrix.o grid.o
-EXEC=grid.out
+EXEC=
 BENCH=
 TEST=test_matrix.out test_grid.out
 
@@ -15,6 +15,7 @@ send:
 
 
 %.out: %.o $(LIBFILES)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 test_%.out: test_%.o %.o $(LIBFILES)
 	$(CC) -o $@ $^ $(LDFLAGS)
