@@ -46,5 +46,7 @@ def simulate(n, mata, matb, matc)
 	system("gnuplot #{plotfile}")
 end
 
-gen_matrix_file(7, "mat.dat")
+gen_matrix_file(8, "mat.dat")
 simulate(7, "mat.dat", "mat.dat", "out.dat")
+
+

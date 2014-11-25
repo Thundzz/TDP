@@ -29,13 +29,15 @@ int main(int argc, char** argv) {
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank); 
 	MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-	if(argc != 4)
+	double debut = MPI_Wtime();
+	double fin;
+	if(argc != 5)
 	{
-		PRINT_ERROR("Syntax: ./a.out 'input_file_A' 'input_file_B' 'output_file'\n");
+		PRINT_ERROR("Syntax: ./a.out 'input_file_A' 'input_file_B' 'output_file' 'nb_iter' \n");
 		MPI_Finalize();
 		return -1;
 	}
-
+	int nb_iter = atoi(argv[4]);
 	//Checks if np is a squared number, as grid must be perfect.
 	int gd = sqrt(np);
 	if(gd*gd != np)
@@ -45,7 +47,7 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	//Global matrices
+	//Global matrixes
 	int N, M;
 	matrix a;
 	matrix b;
@@ -125,6 +127,10 @@ int main(int argc, char** argv) {
 	free(bl_b);
 	free(bl_c);
 
+
+	fin = MPI_Wtime();
+
+	printf("Time spent: %g\n", fin-debut);
 	MPI_Finalize();
 	return 0;
 }
