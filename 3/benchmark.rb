@@ -19,4 +19,4 @@ def gen_matrix_file(max, filename)
 end
 
 
-gen_matrix_file(9, "mat.dat")
+gen_matrix_file(8, "mat.dat")
