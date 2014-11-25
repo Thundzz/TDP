@@ -11,6 +11,9 @@ typedef struct Matrix{
 /* Dans toute la suite, les matrices
  seront allouées au format column major*/
 
+/** Initialise une matrice nulle
+ */
+void matrix_zero(matrix* m, int size);
 
 /** Prend en argument un nom de fichier.
  *  Charge le fichier passé en retourne une matrice m allouée
@@ -21,7 +24,7 @@ typedef struct Matrix{
  *  <a10> <a11> <a12> ... <a1N>
  *	...
  */
-matrix * matrix_load(const char * filename);
+int matrix_load(matrix* m, const char * filename);
 
 /** Prend en argument un nom de fichier et une matrice,
  * et sauvegarde cette matrice dans le fichier en question

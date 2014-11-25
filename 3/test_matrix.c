@@ -8,9 +8,10 @@
 
 int main(void)
 {
-	matrix * m = matrix_load(LOAD_FILE);
-	matrix_print(stdout, m);
-	matrix_store(WRITE_FILE, m);
-	matrix_free(m);
+	matrix m;
+	matrix_load(&m, LOAD_FILE);
+	matrix_print(stdout, &m);
+	matrix_store(WRITE_FILE, &m);
+	matrix_free(&m);
 	return 0;
 }
