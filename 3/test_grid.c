@@ -9,6 +9,18 @@
 
 #define PRINT_ERROR(prnt) do{if(myrank == 0){ printf(prnt);}} while(0)
 
+void time_store(int np, double* tempsMax, char* timefile)
+{
+	FILE* fp = fopen(timefile, "a+");
+	if(fp != NULL)
+	{
+		if(np == 1)
+			fprintf(fp, "%g\n", *tempsMax);
+		else
+			fprintf(fp, "%d %g\n", np, *tempsMax);
+	}	
+}
+
 int main(int argc, char** argv) {
 	int np;
 	int myrank; 
@@ -68,11 +80,14 @@ int main(int argc, char** argv) {
 
 	double *bl_a, *bl_b;
 	MPI_Datatype type_block;
+
+	double debut = MPI_Wtime();
+	
 	bl_a = partition_matrix(a.content, N, gd, &type_block);
 	bl_b = partition_matrix(b.content, N, gd, &type_block);
 
- 	MPI_Comm comm_row, comm_col, comm_grid; 
- 	create_grid(myrank, gd, &comm_grid, &comm_row, &comm_col);
+	MPI_Comm comm_row, comm_col, comm_grid; 
+	create_grid(myrank, gd, &comm_grid, &comm_row, &comm_col);
 
 
 	double* bl_c = malloc(N/gd*N/gd*sizeof(double));
@@ -82,14 +97,24 @@ int main(int argc, char** argv) {
 	}
 
 	prod_matrix(N, N/gd, myrank,
-			bl_a, bl_b, bl_c,
-			comm_grid, comm_col, comm_row);
+		bl_a, bl_b, bl_c,
+		comm_grid, comm_col, comm_row);
 
 	matrix c = gather_matrix(bl_c, N, gd, &type_block);
 
+	double fin = MPI_Wtime();
+	double temps = fin - debut;
+	double tempsMax;
+	MPI_Reduce(&temps, &tempsMax, 1 , MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+
 	if(myrank == 0)
 	{
-	    matrix_store("output.dat", &c);
+		matrix_store(argv[3], &c);
+		if(np == 1)
+			time_store(np, &tempsMax, "seqtime.dat");
+		else
+			time_store(np, &tempsMax, "time.dat");
 	}
 	if(myrank == 0){
 		matrix_free(&a);
