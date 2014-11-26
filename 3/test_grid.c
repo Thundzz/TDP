@@ -114,8 +114,7 @@ int main(int argc, char** argv) {
 		matrix_store(argv[3], &c);
 		if(np == 1)
 			time_store(np, &tempsMax, "seqtime.dat");
-		else
-			time_store(np, &tempsMax, "time.dat");
+		time_store(np, &tempsMax, "time.dat");
 	}
 	if(myrank == 0){
 		matrix_free(&a);

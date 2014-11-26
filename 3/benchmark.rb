@@ -24,19 +24,11 @@ def gen_plot_script(input, seqtime, pltout, pngout)
 				"set ylabel \"Speedup\"\n"+
 				"set term png\n"+
 				"set output \"#{pngout}\"\n"+
-				"plot \"#{input}\" using 1:($2/#{seqtime}) with linespoints title speedup")
+				"plot \"#{input}\" using 1:(#{seqtime}/$2) with linespoints title \"speedup\"")
 	end 
 end
 
-
-def simulate(n, mata, matb, matc)
-	system("make timeclean")
-
-	for i in 1..n
-		nbProcess = i*i
-		system("mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc}")
-	end
-	
+def gnuplotit(matc)
 	f = File.open("seqtime.dat", 'r')
 	seqtime = f.gets.to_f
 	
@@ -46,7 +38,18 @@ def simulate(n, mata, matb, matc)
 	system("gnuplot #{plotfile}")
 end
 
-gen_matrix_file(8, "mat.dat")
-simulate(7, "mat.dat", "mat.dat", "out.dat")
+def simulate(n, mata, matb, matc)
+	system("make timeclean")
 
+	for i in 1..n
+		nbProcess = i*i
+		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc}")
+		system("mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc}")
+	end
+	gnuplotit(matc)
+end
+
+#gen_matrix_file(8, "mat.dat")
+#simulate(7, "mat.dat", "mat.dat", "out.dat")
+gnuplotit("out.dat")
 
