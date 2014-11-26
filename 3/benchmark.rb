@@ -38,18 +38,18 @@ def gnuplotit(matc)
 	system("gnuplot #{plotfile}")
 end
 
-def simulate(n, mata, matb, matc)
+def simulate(n, mata, matb, matc, nbIter)
 	system("make timeclean")
 
 	for i in 1..n
 		nbProcess = i*i
-		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc}")
-		system("mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc}")
+		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc} #{nbIter}")
+		system("mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc} #{nbIter}")
 	end
 	gnuplotit(matc)
 end
 
-#gen_matrix_file(8, "mat.dat")
-#simulate(7, "mat.dat", "mat.dat", "out.dat")
+gen_matrix_file(8, "mat.dat")
+simulate(7, "mat.dat", "mat.dat", "out.dat", 10)
 gnuplotit("out.dat")
 
