@@ -29,15 +29,13 @@ int main(int argc, char** argv) {
 	MPI_Comm_rank( MPI_COMM_WORLD, &myrank); 
 	MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-	double debut = MPI_Wtime();
-	double fin;
-	if(argc != 5)
+	if(argc != 4)
 	{
 		PRINT_ERROR("Syntax: ./a.out 'input_file_A' 'input_file_B' 'output_file' 'nb_iter' \n");
 		MPI_Finalize();
 		return -1;
 	}
-	int nb_iter = atoi(argv[4]);
+	//int nb_iter = atoi(argv[4]);
 	//Checks if np is a squared number, as grid must be perfect.
 	int gd = sqrt(np);
 	if(gd*gd != np)
@@ -56,6 +54,9 @@ int main(int argc, char** argv) {
 		N = matrix_load(&a, argv[1]);
 		M = matrix_load(&b, argv[2]);
 	}
+
+	double debut = MPI_Wtime();
+
 	MPI_Bcast (&N, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 	MPI_Bcast (&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -82,8 +83,6 @@ int main(int argc, char** argv) {
 
 	double *bl_a, *bl_b;
 	MPI_Datatype type_block;
-
-	double debut = MPI_Wtime();
 	
 	bl_a = partition_matrix(a.content, N, gd, &type_block);
 	bl_b = partition_matrix(b.content, N, gd, &type_block);
@@ -127,10 +126,6 @@ int main(int argc, char** argv) {
 	free(bl_b);
 	free(bl_c);
 
-
-	fin = MPI_Wtime();
-
-	printf("Time spent: %g\n", fin-debut);
 	MPI_Finalize();
 	return 0;
 }
