@@ -2,9 +2,9 @@ CC=mpicc
 CFLAGS= -W -Wall -g -O2 -std=c99
 LDFLAGS= -W -Wall -g -O2 -lm
 LIBFILES= matrix.o grid.o
-EXEC=
+EXEC=main.out
 BENCH=
-TEST=test_matrix.out test_grid.out
+TEST=test_matrix.out test_dgemm.out
 
 all: $(TEST) $(BENCH) $(EXEC)
 
@@ -12,7 +12,6 @@ test: $(TEST)
 
 send:
 	scp * formation:TDP/3
-
 
 %.out: %.o $(LIBFILES)
 	$(CC) -o $@ $^ $(LDFLAGS)

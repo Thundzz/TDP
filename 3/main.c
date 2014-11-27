@@ -108,7 +108,6 @@ int main(int argc, char** argv) {
 	}
 
 	MPI_Bcast (&N, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-	MPI_Bcast (&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	double debut = MPI_Wtime();
 	

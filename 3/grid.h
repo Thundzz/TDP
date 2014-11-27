@@ -1,7 +1,15 @@
 #ifndef GRID_H
 #define GRID_H
 
+#include "mpi.h"
 #include "matrix.h"
+
+/** Produit matriciel scalaire sur deux matrices carrées A et B de
+ *  taille N.
+ *  Résultat inscrit dans la matrice C
+ **/ 
+void cblas_dgemm_scalaire(const int N,
+	const double *A, const double *B, double *C);
 
 /** Réalise le produit matriciel par blocs
  **/

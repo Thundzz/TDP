@@ -64,8 +64,8 @@ def simulate(n, mata, matb, matc, nbIter)
 
 	for i in 1..n
 		nbProcess = i*i
-		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc} #{nbIter}")
-		system("mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc} #{nbIter}")
+		system("echo mpiexec -np #{nbProcess} ./main.out #{mata} #{matb} #{matc} #{nbIter}")
+		system("mpiexec -np #{nbProcess} ./main.out #{mata} #{matb} #{matc} #{nbIter}")
 	end
 end
 
@@ -97,8 +97,8 @@ def gen_proc_cst(max, nbProcess, matc, nbIter)
 	speedup_name = "speedup#{nbProcess}.dat"
 	for i in 2..max
 		gen_matrix_size(2**i, matrix_name)
-		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
-		system("mpiexec -np #{nbProcess} ./test_grid.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
+		system("echo mpiexec -np #{nbProcess} ./main.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
+		system("mpiexec -np #{nbProcess} ./main.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
 		File.open("time.dat") do |timefile|
 			timefile.each_line do |line|
 				time[2**i] = line.split(" ")[1].to_f
@@ -113,7 +113,7 @@ def gen_proc_cst(max, nbProcess, matc, nbIter)
 	end
 end
 
-#gen_all_proc_var();
+
 def gen_all_triple_proc_cst()
 	gen_proc_cst(9, 1, "output.dat", 10)
 	gen_proc_cst(9, 4, "output.dat", 10)
@@ -121,5 +121,6 @@ def gen_all_triple_proc_cst()
 	gen_plot_script_triple("speedup1.dat", "speedup4.dat", "speedup16.dat", "out.plt", "out.png")
 	%x{gnuplot out.plt}
 end
-gen_all_triple_proc_cst()
+#gen_all_triple_proc_cst()
+gen_all_proc_var();
 #gen_matrix_size(10, "mat.dat")
