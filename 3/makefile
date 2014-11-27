@@ -24,7 +24,7 @@ test_%.out: test_%.o %.o $(LIBFILES)
 	$(CC) -o $@ -c $< $(CFLAGS)
 	
 clean:
-	rm -rf *.o  *.[oe][0-9]* *~ *# *.out *.dat *.gp
+	rm -rf *.o  *.[oe][0-9]* *~ *# *.out *.dat *.gp *.plt *.png
 
 timeclean:
 	rm -rf *time.dat

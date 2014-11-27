@@ -1,5 +1,22 @@
 #!/usr/bin/env ruby
 
+
+def gen_speedup_file(time_file, speedup_file)
+	timeHash = {}
+	File.open(time_file, 'r') do |time|
+		time.each_line do |line|
+			data = line.split(" ")
+			timeHash[data[0].to_i] = data[1].to_f
+		end
+	end
+	t0 = timeHash[1]
+	File.open(speedup_file, "w+") do |speedup|
+		timeHash.each do |key, value|
+			speedup.puts("#{key} #{t0/value}")
+		end
+	end
+end
+
 def gen_matrix_file(max, filename)
 	size = (1..max).reduce(:lcm)
 	puts(size)
@@ -28,28 +45,6 @@ def gen_plot_script(input, pltout, pngout)
 	end 
 end
 
-def gen_speedup_file()
-	timeHash = {}
-	File.open("time.dat", 'r') do |time|
-		time.each_line do |line|
-			data = line.split(" ")
-			timeHash[data[0].to_i] = data[1].to_f
-		end
-	end
-	t0 = timeHash[1]
-	speedup = File.open("speedup.dat", "w")
-	timeHash.each do |key, value|
-		speedup.puts("#{key} #{t0/value}")
-	end
-end
-
-def gnuplotit(matc)
-	plotfile = matc+".plt"
-	pngfile = matc+".png"
-	gen_plot_script("speedup.dat", plotfile, pngfile)
-	system("gnuplot #{plotfile}")
-end
-
 def simulate(n, mata, matb, matc, nbIter)
 	system("make timeclean")
 
@@ -58,15 +53,17 @@ def simulate(n, mata, matb, matc, nbIter)
 		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc} #{nbIter}")
 		system("mpiexec -np #{nbProcess} ./test_grid.out #{mata} #{matb} #{matc} #{nbIter}")
 	end
-	gnuplotit(matc)
 end
+
 def gen_all()
-	#gen_matrix_file(8, "mat.dat")
-	#simulate(7, "mat.dat", "mat.dat", "out.dat", 5)
-	gen_speedup_file()
-	gnuplotit "out"
+	gen_matrix_file(8, "mat.dat")
+	simulate(7, "mat.dat", "mat.dat", "out.dat", 10)
+	gen_speedup_file("time.dat", "speedup.dat")
+	gen_plot_script("speedup.dat", "out.plt", "out.png")
+	%x{gnuplot out.plt}
 end
-gen_all
+
+gen_all()
 
 
 
