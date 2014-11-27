@@ -18,23 +18,35 @@ def gen_matrix_file(max, filename)
 	end
 end
 
-def gen_plot_script(input, seqtime, pltout, pngout)
+def gen_plot_script(input, pltout, pngout)
 	File.open(pltout, 'w+') do |f|  
 		f.puts("set xlabel \"Nombre de processus\"\n"+
 				"set ylabel \"Speedup\"\n"+
 				"set term png\n"+
 				"set output \"#{pngout}\"\n"+
-				"plot \"#{input}\" using 1:(#{seqtime}/$2) with linespoints title \"speedup\"")
+				"plot \"#{input}\" using 1:2 with linespoints title \"speedup\"\n")
 	end 
 end
 
+def gen_speedup_file()
+	timeHash = {}
+	File.open("time.dat", 'r') do |time|
+		time.each_line do |line|
+			data = line.split(" ")
+			timeHash[data[0].to_i] = data[1].to_f
+		end
+	end
+	t0 = timeHash[1]
+	speedup = File.open("speedup.dat", "w")
+	timeHash.each do |key, value|
+		speedup.puts("#{key} #{t0/value}")
+	end
+end
+
 def gnuplotit(matc)
-	f = File.open("seqtime.dat", 'r')
-	seqtime = f.gets.to_f
-	
-	plotfile = matc+".gp"
+	plotfile = matc+".plt"
 	pngfile = matc+".png"
-	gen_plot_script("time.dat", seqtime, plotfile, pngfile)
+	gen_plot_script("speedup.dat", plotfile, pngfile)
 	system("gnuplot #{plotfile}")
 end
 
@@ -48,8 +60,13 @@ def simulate(n, mata, matb, matc, nbIter)
 	end
 	gnuplotit(matc)
 end
+def gen_all()
+	#gen_matrix_file(8, "mat.dat")
+	#simulate(7, "mat.dat", "mat.dat", "out.dat", 5)
+	gen_speedup_file()
+	gnuplotit "out"
+end
+gen_all
 
-gen_matrix_file(8, "mat.dat")
-simulate(7, "mat.dat", "mat.dat", "out.dat", 10)
-gnuplotit("out.dat")
+
 
