@@ -111,7 +111,7 @@ int main(void)
 	if(np != gd*gd)
 	{
 		if(myrank == 0)
-			printf("Please restart the test with 9 processes");
+			printf("Please restart the test with 9 processes\n");
 		MPI_Finalize();
 		return 0;
 	}
