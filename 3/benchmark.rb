@@ -80,8 +80,8 @@ end
 
 def gen_plot_script_triple(input1, input2, input3, pltout, pngout)
 	File.open(pltout, 'w+') do |f|  
-		f.puts("set xlabel \"Nombre de processus\"\n"+
-				"set ylabel \"Speedup\"\n"+
+		f.puts("set xlabel \"Dimensions\"\n"+
+				"set ylabel \"Temps d'execution en s\"\n"+
 				"set term png\n"+
 				"set output \"#{pngout}\"\n"+
 				"set logscale\n"+

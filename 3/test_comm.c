@@ -47,6 +47,31 @@ void test_bcast(double* A, int myrank, int np, MPI_Comm *comm)
 	}
 }
 
+void test_exchange(double* A, int myrank, int np, MPI_Comm comm_grid, MPI_Comm comm_col)
+{
+	int i;
+	MPI_Status st;
+	int coords[2];
+	
+	int gd = N/NB;
+	MPI_Cart_coords(comm_grid, myrank, 2, coords);
+	int sndto = (((coords[0]-1)%gd) +gd) %gd;
+	int recvfrom = (coords[0]+1)%gd;
+
+	MPI_Sendrecv_replace(A, NB*NB, MPI_DOUBLE, sndto, 0, 
+			recvfrom, 0, comm_col, &st);
+
+	for(i = 0; i<np; i++)
+	{
+		if(myrank == i)
+		{
+			printf("=== Block on proc %d === \n", myrank);
+			print_matrix(A, NB);
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+}
+
 void print_grid(double* A, int myrank, int np)
 {
 	int i;
@@ -106,9 +131,9 @@ int main(void)
 	if(myrank == 0)
 	{
 		printf("Test 2 comm : Broadcast column\n");
-		printf("First of each column broadcasts his matrix to the row\n");
+		printf("Each process passes his matrix to the upper row\n");
 	}
-	test_bcast(A, myrank, np, &comm_col);
+	test_exchange(A, myrank, np, comm_grid, comm_col);
 
 	free(A);
 	return 0;
