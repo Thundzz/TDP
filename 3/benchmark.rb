@@ -19,7 +19,6 @@ end
 
 def gen_matrix_file(max, filename)
 	size = (1..max).reduce(:lcm)
-	puts(size)
 	File.open(filename, "w") do |f| 
 		f.puts(size)
 		for i in 1..size
@@ -34,6 +33,24 @@ def gen_matrix_file(max, filename)
 		end
 	end
 end
+
+def gen_matrix_size(size, filename)
+	puts "Generating a matrix of size #{size}"
+	File.open(filename, "w") do |f| 
+		f.puts(size)
+		for i in 1..size
+			for j in 1..size
+				if i==j
+					f.write("1 ")
+				else
+					f.write("0 ")
+				end
+			end
+			f.write("\n")
+		end
+	end
+end
+
 
 def gen_plot_script(input, pltout, pngout)
 	File.open(pltout, 'w+') do |f|  
@@ -55,7 +72,7 @@ def simulate(n, mata, matb, matc, nbIter)
 	end
 end
 
-def gen_all()
+def gen_all_proc_var()
 	gen_matrix_file(8, "mat.dat")
 	simulate(7, "mat.dat", "mat.dat", "out.dat", 10)
 	gen_speedup_file("time.dat", "speedup.dat")
@@ -63,7 +80,29 @@ def gen_all()
 	%x{gnuplot out.plt}
 end
 
-gen_all()
+
+def gen_proc_cst(max, nbProcess, matc, nbIter)
+	time = {}
+	matrix_name = "mat.dat"
+	for i in 1..max/2
+		gen_matrix_size(2*i, matrix_name)
+		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
+		system("mpiexec -np #{nbProcess} ./test_grid.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
+		File.open("time.dat") do |timefile|
+			timefile.each_line do |line|
+				time[2*i] = line.split(" ")[1].to_f
+			end
+		end
+	end
+
+	File.open("speedup.dat", "w+") do |spdupfile|
+		time.each do |key, value|
+			spdupfile.puts "#{key} #{value}"
+		end
+	end
+	gen_plot_script("speedup.dat", "out.plt", "out.png")
+	%x{gnuplot out.plt}
+end
 
 
-
+gen_proc_cst(30, 1, "output.dat", 10000)
