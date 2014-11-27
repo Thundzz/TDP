@@ -23,11 +23,7 @@ def gen_matrix_file(max, filename)
 		f.puts(size)
 		for i in 1..size
 			for j in 1..size
-				if i==j
-					f.write("1 ")
-				else
-					f.write("0 ")
-				end
+				f.write("#{rand} ")
 			end
 			f.write("\n")
 		end
@@ -41,9 +37,9 @@ def gen_matrix_size(size, filename)
 		for i in 1..size
 			for j in 1..size
 				if i==j
-					f.write("1 ")
+					f.write("#{rand} ")
 				else
-					f.write("0 ")
+					f.write("#{rand} ")
 				end
 			end
 			f.write("\n")
@@ -106,3 +102,4 @@ end
 
 
 gen_proc_cst(30, 1, "output.dat", 10000)
+#gen_matrix_size(10, "mat.dat")
