@@ -54,6 +54,7 @@ def gen_plot_script(input, pltout, pngout)
 				"set ylabel \"Speedup\"\n"+
 				"set term png\n"+
 				"set output \"#{pngout}\"\n"+
+				"set logscale\n"+
 				"plot \"#{input}\" using 1:2 with linespoints title \"speedup\"\n")
 	end 
 end
@@ -77,29 +78,48 @@ def gen_all_proc_var()
 end
 
 
+def gen_plot_script_triple(input1, input2, input3, pltout, pngout)
+	File.open(pltout, 'w+') do |f|  
+		f.puts("set xlabel \"Nombre de processus\"\n"+
+				"set ylabel \"Speedup\"\n"+
+				"set term png\n"+
+				"set output \"#{pngout}\"\n"+
+				"set logscale\n"+
+				"plot \"#{input1}\" using 1:2 with linespoints, "+
+				"\"#{input2}\" using 1:2 with linespoints, "+
+				"\"#{input3}\" using 1:2 with linespoints")
+	end 
+end
+
 def gen_proc_cst(max, nbProcess, matc, nbIter)
 	time = {}
 	matrix_name = "mat.dat"
-	for i in 1..max/2
-		gen_matrix_size(2*i, matrix_name)
+	speedup_name = "speedup#{nbProcess}.dat"
+	for i in 2..max
+		gen_matrix_size(2**i, matrix_name)
 		system("echo mpiexec -np #{nbProcess} ./test_grid.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
 		system("mpiexec -np #{nbProcess} ./test_grid.out #{matrix_name} #{matrix_name} #{matc} #{nbIter}")
 		File.open("time.dat") do |timefile|
 			timefile.each_line do |line|
-				time[2*i] = line.split(" ")[1].to_f
+				time[2**i] = line.split(" ")[1].to_f
 			end
 		end
 	end
 
-	File.open("speedup.dat", "w+") do |spdupfile|
+	File.open(speedup_name, "w+") do |spdupfile|
 		time.each do |key, value|
 			spdupfile.puts "#{key} #{value}"
 		end
 	end
-	gen_plot_script("speedup.dat", "out.plt", "out.png")
-	%x{gnuplot out.plt}
 end
 
-
-gen_proc_cst(30, 1, "output.dat", 10000)
+#gen_all_proc_var();
+def gen_all_triple_proc_cst()
+	gen_proc_cst(9, 1, "output.dat", 10)
+	gen_proc_cst(9, 4, "output.dat", 10)
+	gen_proc_cst(9, 16, "output.dat", 10)
+	gen_plot_script_triple("speedup1.dat", "speedup4.dat", "speedup16.dat", "out.plt", "out.png")
+	%x{gnuplot out.plt}
+end
+gen_all_triple_proc_cst()
 #gen_matrix_size(10, "mat.dat")
