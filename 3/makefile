@@ -4,7 +4,7 @@ LDFLAGS= -W -Wall -g -O2 -lm
 LIBFILES= matrix.o grid.o
 EXEC=main.out
 BENCH=
-TEST=test_matrix.out test_dgemm.out
+TEST=test_matrix.out test_dgemm.out test_scatter_gather.out test_comm.out
 
 all: $(TEST) $(BENCH) $(EXEC)
 

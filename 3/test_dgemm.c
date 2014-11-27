@@ -42,11 +42,11 @@ void init_id(double* m)
   }
 }
 
-int main(void) {
+int main(void) 
+{
   double *A = malloc(N*N*sizeof(double));
   double *B = malloc(N*N*sizeof(double));
   double *C = malloc(N*N*sizeof(double));
-  double realC[N*N];
 
   int i, j, res = 2;
   for(i = 0; i<N; i++)
@@ -59,7 +59,7 @@ int main(void) {
   init_zero(C);
   init_id(A);
 
-  printf("Test 1 dgemm : A=id, B=quelconque\n");
+  printf("Test 1 dgemm : A=Id, B=any\n");
   cblas_dgemm_scalaire(N, A, B, C);
   if (!check_eq(C, B))
   {
@@ -68,7 +68,7 @@ int main(void) {
   }
 
   init_zero(C);
-  printf("Test 2 dgemm : A=quelconque, B=id\n");
+  printf("Test 2 dgemm : A=any, B=Id\n");
   cblas_dgemm_scalaire(N, B, A, C);
   if (!check_eq(C, B))
   {
