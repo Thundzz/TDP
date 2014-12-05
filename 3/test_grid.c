@@ -18,7 +18,8 @@ void time_store(int np, double* tempsMax, char* timefile)
 			fprintf(fp, "%g\n", *tempsMax);
 		else
 			fprintf(fp, "%d %g\n", np, *tempsMax);
-	}	
+	}
+	fclose(fp);
 }
 
 void multiply_once(matrix a, matrix b, int N, int gd, int myrank, const char* filename)
