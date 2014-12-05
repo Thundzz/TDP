@@ -14,11 +14,8 @@ void time_store(int np, double* tempsMax, char* timefile)
 	FILE* fp = fopen(timefile, "a+");
 	if(fp != NULL)
 	{
-		if(np == 1)
-			fprintf(fp, "%g\n", *tempsMax);
-		else
-			fprintf(fp, "%d %g\n", np, *tempsMax);
-	}
+		fprintf(fp, "%d %g\n", np, *tempsMax);
+	}	
 	fclose(fp);
 }
 
@@ -112,7 +109,6 @@ int main(int argc, char** argv) {
 	}
 
 	MPI_Bcast (&N, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-	MPI_Bcast (&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	double debut = MPI_Wtime();
 	
@@ -129,8 +125,6 @@ int main(int argc, char** argv) {
 	if(myrank == 0)
 	{
 		tempsMax /= nb_iter;
-		if(np == 1)
-			time_store(np, &tempsMax, "seqtime.dat");
 		time_store(np, &tempsMax, "time.dat");
 		matrix_free(&a);
 		matrix_free(&b);
