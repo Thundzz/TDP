@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cblas.h"
-#include "lapacke.h"
 #include "util.h"
 
 void cblas_dger(const enum CBLAS_ORDER order, const int M, const int N,
