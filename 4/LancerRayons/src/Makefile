@@ -27,6 +27,7 @@ ZCAT = -DZCAT_COMMAND=\"`which zcat`\"
 
 # Macros predefinies
 CC = gcc
+CC = mpicc
 MPICC = mpicc
 
 # options de compilation
@@ -56,7 +57,8 @@ HDR_CAMERA = cmr.h
 
 
 #pour changer de type de lancer de rayons, mettre le bon .c
-SRC_IMAGE = img.basic.c
+#SRC_IMAGE = img.basic.c
+SRC_IMAGE = img.mpi-static.c
 HDR_IMAGE = $(SRC_IMAGE:.c=.h)
 
 #pour changer de type de lancer de rayons, mettre le bon .c
@@ -99,6 +101,7 @@ OBJ = $(SRC:.c=.o)
 
 # cibles standards
 all: $(BIN)
+
 
 #
 clean:
@@ -168,3 +171,8 @@ class.o: ../include/type.h ../include/type_spec.h ett.h geo.h geo.nappe.h
 class.o: geo.quadric.h geo.point.h
 getarg.o: getarg.h
 read_file.o: bnd.h img.h cmr.h read_file.h
+
+#Add compile rules for the static MPI version
+img.mpi-static.o: ../include/type.h ../include/macro.h 
+img.mpi-static.o: ../include/exit-if.h ../include/const.h ../include/type_spec.h
+img.mpi-static.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h

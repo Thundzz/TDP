@@ -133,7 +133,7 @@ img (const char *FileNameImg)
   {
     COLOR *buf;
     INIT_MEM(buf,nb_processes*q*CARREAUSIZE, COLOR );
-    free(buf); 
+    free(buf)
   }
   // TODO: écrire dans le fichier
 
