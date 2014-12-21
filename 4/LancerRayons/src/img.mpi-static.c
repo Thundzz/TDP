@@ -90,7 +90,6 @@ img (const char *FileNameImg)
 
   /* Nombre de carreaux */
   int nb_carreaux = (Img.Pixel.i * Img.Pixel.j / (XCARREAU*YCARREAU)); 
-  printf("%d \n", nb_carreaux);
   /* Nombre de carreaux dont doit s'occuper chaque processus. */
   int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
   /* Initialisation d'un tableau local au processus. */
@@ -110,8 +109,9 @@ img (const char *FileNameImg)
     {
       for (l = 0; l < YCARREAU; ++l)
       {
-        int I= fstpixel_x+k, J = fstpixel_y+l;k
-        TabColor [I*Img.Pixel.j + J ] = pixel_basic (I, J);
+        int I= fstpixel_x+k, J = fstpixel_y+l;
+        if(I < Img.Pixel.i && J< Img.Pixel.j)
+          TabColor [J*Img.Pixel.i + I ] = pixel_basic (I, J);
       }
     }
   }
