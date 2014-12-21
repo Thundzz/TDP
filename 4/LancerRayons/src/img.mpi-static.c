@@ -13,8 +13,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <mpi.h>
-
 #include "img.h"
 
 #include "macro.h"
@@ -26,6 +24,8 @@
 #include "scn.h"
 #include "bnd.h"
 #include "cmr.h"
+#include <mpi.h>
+
 
 #define XCARREAU 8
 #define YCARREAU 8
@@ -79,13 +79,11 @@ img (const char *FileNameImg)
   COLOR	 *TabColor, *Color;
   STRING Name;
   INDEX	 i, j, k, l;
-  BYTE   Byte;
+  BYTE Byte;
 
   /* Initialisation des constantes MPI */
   int myrank, nb_processes;
   MPI_Init( NULL, NULL ); 
-  MPI_Request send_req, recv_req;
-  MPI_Status send_stat, recv_stat;
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
   MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
@@ -98,45 +96,51 @@ img (const char *FileNameImg)
   }
   /* Nombre de carreaux */
   int nb_carreaux = Img.Pixel.i * Img.Pixel.j / CARREAUSIZE; 
+
   /* Nombre de carreaux dont doit s'occuper chaque processus*/
   int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
-  INIT_MEM (TabColor, q*CARREAUSIZE, COLOR);
-
+  INIT_MEM (TabColor, Img.Pixel.i, COLOR);
+  int C = nb_carreaux;
+  int N = C+1;
 
   int start_j = myrank * q ;
   int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
-
   /* j correspond au carreau qu'on est en train de traiter*/
   for (j=start_j; j<= end_j; j++){
     int carreau_courant = j * N % C;
     int fstpixel_x, fstpixel_y;
-    carreau_index_to_pixel(carreau_courant, Img.Pixel.i/XCARREAU, &x, &y );
+    carreau_index_to_pixel(carreau_courant, Img.Pixel.i/XCARREAU, &fstpixel_x, &fstpixel_y );
     /*i correspond au pixel qu'on est en train de traiter*/
-    int i = 0;
+    i = 0;
     for (k = 0; k < XCARREAU; ++k)
     {
       for (l = 0; l < YCARREAU; ++l)
       {
-        TabColor [(j-start_j)*CARREAUSIZE + i] = pixel_basic (x+k, y+l);
+        TabColor [(j-start_j)*CARREAUSIZE + i] = pixel_basic (fstpixel_x+k, fstpixel_y+l);
         i++;
       }
     }
   }
-  int counts[nb_carreaux];
-  int displs[nb_carreaux];
 
-  MPI_Gatherv(TabColor, q*CARREAUSIZE, MPI_Color,
-                buf, counts, displs,
-                MPI_Color, 0, MPI_COMM_WORLD);
 
-  if(rank == 0)
+  MPI_Reduce(TabColor, TabColor, Img.Pixel.i*Img.Pixel.j*3, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+
+  // Si je suis le root, j'écris dans le fichier
+  if(myrank == 0)
   {
-    COLOR *buf;
-    INIT_MEM(buf,nb_processes*q*CARREAUSIZE, COLOR );
-    free(buf)
+    for (j = 0; j < Img.Pixel.j; j++) {
+      for (i = 0, Color = TabColor; i < Img.Pixel.i*Img.Pixel.j; i++, Color++) {
+        Byte = Color->r < 1.0 ? 255.0*Color->r : 255.0;
+        putc (Byte, FileImg);
+        Byte = Color->g < 1.0 ? 255.0*Color->g : 255.0;
+        putc (Byte, FileImg);
+        Byte = Color->b < 1.0 ? 255.0*Color->b : 255.0;
+        putc (Byte, FileImg);
+      }
+      fflush (FileImg);
+    }
   }
-  // TODO: écrire dans le fichier
-
   EXIT_MEM (TabColor);
   EXIT_FILE (FileImg);
   

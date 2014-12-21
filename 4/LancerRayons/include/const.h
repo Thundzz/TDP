@@ -21,23 +21,14 @@
 #define PI		(REAL) 3.141592653589793
 #define	RAD		(REAL) 1.745329251994329E-2
 #define	LOG		(REAL) -0.69314718
-#define	INFINITY	(REAL) 1E35
+#ifndef INFINITY
+	#define	INFINITY	(REAL) 1E35
+#endif
 #define	EPSILON		(REAL) 0.0001
 /*
 **  CONST.H :
 **
 **    Constants definition
 */
-
-#define	TRUE		1
-#define	FALSE		0
-
-#define PI		(REAL) 3.141592653589793
-#define	RAD		(REAL) 1.745329251994329E-2
-#define	LOG		(REAL) -0.69314718
-#define	INFINITY	(REAL) 1E35
-#define	EPSILON		(REAL) 0.0001
-
-
 
 #endif
