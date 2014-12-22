@@ -25,6 +25,7 @@ int main(void)
 		long cur = queue_pop(q);
 		fprintf(stderr,"current: %ld, expected %ld\n", cur, i);
 	}
+	fprintf(stderr,"La pile est vide? %d (should be 1)\n", queue_isEmpty(q));
 	queue_delete(q);
 	return 0;
 }

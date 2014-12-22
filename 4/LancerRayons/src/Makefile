@@ -120,7 +120,7 @@ install: all
 uninstall:
 	cd $(BIN_DIR) ;	$(RM) $(BIN)
 
-lanceur: lanceur.o $(OBJ) $(SRC_IMAGE:.c=.o)
+lanceur: lanceur.o queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 test_queue.out: test_queue.c queue.o
@@ -182,3 +182,8 @@ read_file.o: bnd.h img.h cmr.h read_file.h
 img.mpi-static.o: ../include/type.h ../include/macro.h 
 img.mpi-static.o: ../include/exit-if.h ../include/const.h ../include/type_spec.h
 img.mpi-static.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h
+
+#Add compile rules for the threaded MPI version
+img.mpi-thread.o: ../include/type.h ../include/macro.h 
+img.mpi-thread.o: ../include/exit-if.h ../include/const.h ../include/type_spec.h
+img.mpi-thread.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h

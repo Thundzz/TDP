@@ -20,6 +20,7 @@
 #include "type.h"
 #include "type_spec.h"
 
+#include "queue.h"
 #include "lanceur.h"
 #include "scn.h"
 #include "bnd.h"
@@ -30,12 +31,21 @@
 #define XCARREAU 8
 #define YCARREAU 8
 
+#define NBTHREADS 4
+
 typedef struct {
   COUPLE  Pixel;
 } IMG_BASIC;
 
 static IMG_BASIC  Img;
+/* La queue des tâches ainsi que le tableau
+ recevant les valeurs calculées est commun aux threads 
+ et déclarés global. */
 COLOR  *TabColor;
+Queue * tasks;
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 BOOL
 file_img (FILE *File)
@@ -71,23 +81,6 @@ void carreau_index_to_pixel(long index, int car_par_l, int * x, int * y ){
   *x = (index%car_par_l) * XCARREAU; 
 }
 
-void* worker_f(void * args){
-
-  return NULL;
-}
-
-void* negociator_f(void* args){
-  return NULL;
-}
-
-void create_workers(int nbWorkers, pthread_t * threads){
-  int i;
-  for (i = 0; i < nbWorkers; ++i)
-  {
-    pthread_create(&threads[i], NULL, worker_f, NULL);
-  }
-}
-
 /* Une fonction qui s'occupe de la tuile de numéro tile_number */
 void process_task(long tile_number){
     INDEX k, l;
@@ -104,6 +97,37 @@ void process_task(long tile_number){
       }
     }
 }
+
+void* worker_f(void * args){
+  while(!queue_isEmpty(tasks)){
+    pthread_mutex_lock(&mutex);
+    long task = queue_pop(tasks);
+    pthread_mutex_unlock(&mutex);
+    process_task(task);
+  }
+  return NULL;
+}
+
+void* negociator_f(void* args){
+  return NULL;
+}
+
+void create_workers(int nbWorkers, pthread_t * threads){
+  int i;
+  for (i = 0; i < nbWorkers; ++i)
+  {
+    pthread_create(&threads[i], NULL, worker_f, NULL);
+  }
+}
+
+void join_workers(int nbWorkers, pthread_t* threads){
+  int i;
+  for (i = 0; i < nbWorkers; ++i)
+  {
+    pthread_join(threads[i], NULL);
+  }
+}
+
 
 void
 img (const char *FileNameImg)
@@ -132,14 +156,18 @@ img (const char *FileNameImg)
 
   int start_j = myrank * q ;
   int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
-  /* j correspond au carreau qu'on est en train de traiter*/
+
   /* Mise en place de la queue de tâche partagée entre les threads*/
+  tasks = queue_init(2*(end_j-start_j));
   for (j=start_j; j<= end_j; j++){
     long tile_number =  ((long) j * N) % C;
-    //queue_push(TaskQueue, tile_number);
+    queue_push(tasks, tile_number);
   }
-  // TODO : Lancer les threads travailleurs et le thread communicateur.
 
+  pthread_t workers[NBTHREADS];
+  create_workers(NBTHREADS, workers);
+  join_workers(NBTHREADS, workers);
+  
   if (myrank==0)
   {
     MPI_Reduce(MPI_IN_PLACE, TabColor, Img.Pixel.i*Img.Pixel.j*3, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
