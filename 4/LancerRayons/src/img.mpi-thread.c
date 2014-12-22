@@ -35,7 +35,7 @@ typedef struct {
 } IMG_BASIC;
 
 static IMG_BASIC  Img;
-
+COLOR  *TabColor;
 
 BOOL
 file_img (FILE *File)
@@ -72,7 +72,7 @@ void carreau_index_to_pixel(long index, int car_par_l, int * x, int * y ){
 }
 
 void* worker_f(void * args){
-  
+
   return NULL;
 }
 
@@ -88,6 +88,23 @@ void create_workers(int nbWorkers, pthread_t * threads){
   }
 }
 
+/* Une fonction qui s'occupe de la tuile de numéro tile_number */
+void process_task(long tile_number){
+    INDEX k, l;
+    int fstpixel_x, fstpixel_y;
+    carreau_index_to_pixel(tile_number, Img.Pixel.i/XCARREAU, &fstpixel_x, &fstpixel_y );
+    /*i correspond au pixel qu'on est en train de traiter*/
+    for (k = 0; k < XCARREAU; ++k)
+    {
+      for (l = 0; l < YCARREAU; ++l)
+      {
+        int I= fstpixel_x+k, J = fstpixel_y+l;
+        if(I < Img.Pixel.i && J< Img.Pixel.j)
+          TabColor [J*Img.Pixel.i + I ] = pixel_basic (I, J);
+      }
+    }
+}
+
 void
 img (const char *FileNameImg)
 {
@@ -99,11 +116,10 @@ img (const char *FileNameImg)
   MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
   FILE   *FileImg;   
-  COLOR  *TabColor, *Color;
+  COLOR  *Color;
   STRING Name;
-  INDEX  i, j, k, l;
+  INDEX  i, j;
   BYTE Byte;
-
 
   /* Nombre de carreaux */
   int nb_carreaux = (Img.Pixel.i * Img.Pixel.j / (XCARREAU*YCARREAU)); 
@@ -117,21 +133,12 @@ img (const char *FileNameImg)
   int start_j = myrank * q ;
   int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
   /* j correspond au carreau qu'on est en train de traiter*/
+  /* Mise en place de la queue de tâche partagée entre les threads*/
   for (j=start_j; j<= end_j; j++){
-    long carreau_courant =  ((long) j * N) % C;
-    int fstpixel_x, fstpixel_y;
-    carreau_index_to_pixel(carreau_courant, Img.Pixel.i/XCARREAU, &fstpixel_x, &fstpixel_y );
-    /*i correspond au pixel qu'on est en train de traiter*/
-    for (k = 0; k < XCARREAU; ++k)
-    {
-      for (l = 0; l < YCARREAU; ++l)
-      {
-        int I= fstpixel_x+k, J = fstpixel_y+l;
-        if(I < Img.Pixel.i && J< Img.Pixel.j)
-          TabColor [J*Img.Pixel.i + I ] = pixel_basic (I, J);
-      }
-    }
+    long tile_number =  ((long) j * N) % C;
+    //queue_push(TaskQueue, tile_number);
   }
+  // TODO : Lancer les threads travailleurs et le thread communicateur.
 
   if (myrank==0)
   {

@@ -39,6 +39,9 @@ LDLIBS = -lm
 # application : fichier executable
 BIN = lanceur
 
+# tests de modules locaux.
+TEST= test_queue.out
+
 #pour changer de type de binder, mettre le bon .c
 #SRC_BINDER = bnd.basic.c
 SRC_BINDER = bnd.voxel.c
@@ -101,7 +104,7 @@ SRC = $(SRC_BINDER) $(SRC_CAMERA) $(SRC_SCENE) $(SRC_GEO) $(SRC_ETT) $(SRC_CLASS
 OBJ = $(SRC:.c=.o)
 
 # cibles standards
-all: $(BIN)
+all: $(BIN) $(TEST)
 
 
 #
@@ -120,6 +123,8 @@ uninstall:
 lanceur: lanceur.o $(OBJ) $(SRC_IMAGE:.c=.o)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
+test_queue.out: test_queue.c queue.o
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 .c.o :
 	$(CC) $(CPPFLAGS) $(CFLAGS)  -c $<
 
