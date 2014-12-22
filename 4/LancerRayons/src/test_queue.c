@@ -16,11 +16,11 @@ int main(void)
 		long cur = queue_pop(q);
 		fprintf(stderr,"current: %ld, expected %ld\n", cur, i);
 	}
-	for (i = 11; i < 23; ++i)
+	for (i = 10; i < 20; ++i)
 	{
 		queue_push(q, i);
 	}
-	for (i = 11; i < 23; ++i)
+	for (i = 10; i < 20; ++i)
 	{
 		long cur = queue_pop(q);
 		fprintf(stderr,"current: %ld, expected %ld\n", cur, i);
