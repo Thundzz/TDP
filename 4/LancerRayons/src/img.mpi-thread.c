@@ -13,7 +13,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
 #include "img.h"
 
 #include "macro.h"
@@ -25,7 +24,11 @@
 #include "scn.h"
 #include "bnd.h"
 #include "cmr.h"
+#include <mpi.h>
+#include <pthread.h>
 
+#define XCARREAU 8
+#define YCARREAU 8
 
 typedef struct {
   COUPLE  Pixel;
@@ -62,27 +65,90 @@ pixel_basic (INDEX i, INDEX j)
   return (Ray.Color);
 }
 
+void carreau_index_to_pixel(long index, int car_par_l, int * x, int * y ){
+  int nb_ligne = index/car_par_l;
+  *y = nb_ligne * YCARREAU;
+  *x = (index%car_par_l) * XCARREAU; 
+}
+
+void* worker_f(void * args){
+  
+  return NULL;
+}
+
+void* negociator_f(void* args){
+  return NULL;
+}
+
+void create_workers(int nbWorkers, pthread_t * threads){
+  int i;
+  for (i = 0; i < nbWorkers; ++i)
+  {
+    pthread_create(&threads[i], NULL, worker_f, NULL);
+  }
+}
 
 void
 img (const char *FileNameImg)
 {
+
+  /* Initialisation des constantes MPI */
+  int myrank, nb_processes;
+  MPI_Init( NULL, NULL ); 
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
+  MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
+
   FILE   *FileImg;   
-  COLOR	 *TabColor, *Color;
+  COLOR  *TabColor, *Color;
   STRING Name;
-  INDEX	 i, j;
-  BYTE   Byte;
+  INDEX  i, j, k, l;
+  BYTE Byte;
 
-  strcpy (Name, FileNameImg);
-  strcat (Name, ".ppm");
-  INIT_FILE (FileImg, Name, "w");
-  fprintf (FileImg, "P6\n%d %d\n255\n", Img.Pixel.i, Img.Pixel.j);
-  INIT_MEM (TabColor, Img.Pixel.i, COLOR);
 
-  for (j = 0; j < Img.Pixel.j; j++) {
-    for (i = 0; i < Img.Pixel.i; i++) {
-      TabColor [i] = pixel_basic (i, j);
+  /* Nombre de carreaux */
+  int nb_carreaux = (Img.Pixel.i * Img.Pixel.j / (XCARREAU*YCARREAU)); 
+  /* Nombre de carreaux dont doit s'occuper chaque processus. */
+  int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
+  /* Initialisation d'un tableau local au processus. */
+  INIT_MEM (TabColor, Img.Pixel.i*Img.Pixel.j, COLOR);
+  int C = nb_carreaux;
+  int N = C-1;
+
+  int start_j = myrank * q ;
+  int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
+  /* j correspond au carreau qu'on est en train de traiter*/
+  for (j=start_j; j<= end_j; j++){
+    long carreau_courant =  ((long) j * N) % C;
+    int fstpixel_x, fstpixel_y;
+    carreau_index_to_pixel(carreau_courant, Img.Pixel.i/XCARREAU, &fstpixel_x, &fstpixel_y );
+    /*i correspond au pixel qu'on est en train de traiter*/
+    for (k = 0; k < XCARREAU; ++k)
+    {
+      for (l = 0; l < YCARREAU; ++l)
+      {
+        int I= fstpixel_x+k, J = fstpixel_y+l;
+        if(I < Img.Pixel.i && J< Img.Pixel.j)
+          TabColor [J*Img.Pixel.i + I ] = pixel_basic (I, J);
+      }
     }
-    for (i = 0, Color = TabColor; i < Img.Pixel.i; i++, Color++) {
+  }
+
+  if (myrank==0)
+  {
+    MPI_Reduce(MPI_IN_PLACE, TabColor, Img.Pixel.i*Img.Pixel.j*3, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+  }
+  else
+  {
+    MPI_Reduce(TabColor, NULL, Img.Pixel.i*Img.Pixel.j*3, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD); 
+  }
+  // Si je suis le root, j'écris dans le fichier
+  if(myrank == 0)
+  {
+    strcpy (Name, FileNameImg);
+    strcat (Name, ".ppm");
+    INIT_FILE (FileImg, Name, "w");
+    fprintf (FileImg, "P6\n%d %d\n255\n", Img.Pixel.i, Img.Pixel.j);
+    for (i = 0, Color = TabColor; i < Img.Pixel.i*Img.Pixel.j; i++, Color++) {
       Byte = Color->r < 1.0 ? 255.0*Color->r : 255.0;
       putc (Byte, FileImg);
       Byte = Color->g < 1.0 ? 255.0*Color->g : 255.0;
@@ -91,9 +157,11 @@ img (const char *FileNameImg)
       putc (Byte, FileImg);
     }
     fflush (FileImg);
+    EXIT_FILE (FileImg);
   }
 
   EXIT_MEM (TabColor);
-  EXIT_FILE (FileImg);
   
+  MPI_Finalize();
+
 }

@@ -31,7 +31,7 @@ CC = mpicc
 MPICC = mpicc
 
 # options de compilation
-CPPFLAGS = -I../include -I. $(DEBUG) $(ZCAT)
+CPPFLAGS = -I../include -I. $(DEBUG) $(ZCAT) -pthread
 #CFLAGS = -O -Wall
 CFLAGS = -g -Wall
 LDLIBS = -lm
@@ -58,7 +58,8 @@ HDR_CAMERA = cmr.h
 
 #pour changer de type de lancer de rayons, mettre le bon .c
 #SRC_IMAGE = img.basic.c
-SRC_IMAGE = img.mpi-static.c
+#SRC_IMAGE = img.mpi-static.c
+SRC_IMAGE = img.mpi-thread.c
 HDR_IMAGE = $(SRC_IMAGE:.c=.h)
 
 #pour changer de type de lancer de rayons, mettre le bon .c
