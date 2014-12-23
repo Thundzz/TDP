@@ -74,11 +74,15 @@ pixel_basic (INDEX i, INDEX j)
 
   return (Ray.Color);
 }
-
+/* index is the index of a tile
+ * car_par_l is the number of tiles per line
+ * x, and y are the location where the coordinates
+ * of the first pixel will be stored.
+ **/
 void tile_fst_pixel(long index, int car_par_l, int * x, int * y ){
-  int nb_ligne = index/car_par_l;
+  int nb_ligne = index/(car_par_l+1);
   *y = nb_ligne * YCARREAU;
-  *x = (index%car_par_l) * XCARREAU; 
+  *x = (index%(car_par_l+1)) * XCARREAU; 
 }
 
 /* Une fonction qui s'occupe de la tuile de numéro tile_number */
@@ -93,8 +97,9 @@ void process_task(long tile_number){
       for (l = 0; l < YCARREAU; ++l)
       {
         int I= fpx+k, J = fpy+l;
-        if(I < Img.Pixel.i && J< Img.Pixel.j)
+        if(I < Img.Pixel.i && J< Img.Pixel.j){
           TabColor [J*Img.Pixel.i + I ] = pixel_basic (I, J);
+        }
       }
     }
 }
@@ -133,12 +138,13 @@ void init_tasks(int myrank, int nb_processes)
 {
   INDEX j;
   /* Nombre de carreaux */
-  int nb_carreaux = (Img.Pixel.i * Img.Pixel.j / (XCARREAU*YCARREAU)); 
+  int nb_carreaux = (Img.Pixel.i/XCARREAU +1) * (Img.Pixel.j / YCARREAU +1);
+  
   /* Nombre de carreaux dont doit s'occuper chaque processus. */
   int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
 
   int C = nb_carreaux;
-  int N = C-1;
+  int N = C+1;
   int start_j = myrank * q ;
   int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
 
@@ -175,7 +181,6 @@ void write_file(const char * FileNameImg)
 
 void img (const char *FileNameImg)
 {
-  /* Initialisation des constantes MPI */
   int myrank, nb_processes;
   MPI_Init( NULL, NULL ); 
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
@@ -190,6 +195,7 @@ void img (const char *FileNameImg)
   create_workers(NBTHREADS, workers);
   join_workers(NBTHREADS, workers);
 
+
   if (myrank==0)
   {
     MPI_Reduce(MPI_IN_PLACE, TabColor, img_size, 
@@ -200,7 +206,6 @@ void img (const char *FileNameImg)
     MPI_Reduce(TabColor, NULL, img_size, 
       MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD); 
   }
-
   if(myrank == 0)
   {
     write_file(FileNameImg);
@@ -209,5 +214,4 @@ void img (const char *FileNameImg)
   queue_delete(tasks);
   EXIT_MEM (TabColor);  
   MPI_Finalize();
-
 }
