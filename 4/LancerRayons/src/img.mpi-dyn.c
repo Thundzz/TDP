@@ -176,10 +176,10 @@ void* negociator_f(void* args){
       requested = 1;
     }
     /* Listen for messages from others */
-    MPI_Iprobe(prev, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
+    MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
     /* There is some message to process, let's get it. */
     if(1 == res){
-      MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
+      MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
       /* If the message is a Finalization one */
       if(st.MPI_TAG == FINALIZATION_TAG){
         MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD,&req);
@@ -198,11 +198,19 @@ void* negociator_f(void* args){
         }
         /* If I have tasks to give */
         else if(queue_length(tasks) >= 2){
+          long task = -1;
           pthread_mutex_lock(&mutex);
-          long task = queue_pop(tasks);
+          if(!queue_isEmpty(tasks)){
+            task = queue_pop(tasks);
+          }
           pthread_mutex_unlock(&mutex);
-          send_msg[0] = task;
-          MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD, &req);
+          if(task != -1){
+            send_msg[0] = task;
+            MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD, &req);
+          }
+          else{
+            MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
+          }
         }
         /* Else, I transfer the message to the next node*/
         else{
