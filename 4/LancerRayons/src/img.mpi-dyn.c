@@ -115,8 +115,8 @@ void process_task(long tile_number){
 
 void* worker_f(void * args){
   while(!finalization){
+    pthread_mutex_lock(&mutex);
     if(!queue_isEmpty(tasks)){
-      pthread_mutex_lock(&mutex);
       long task = queue_pop(tasks);
       pthread_mutex_unlock(&mutex);
       process_task(task);
@@ -163,10 +163,12 @@ void* negociator_f(void* args){
   while(1){
     if(finalization)
     {
+      fprintf(stderr, "Process %d finalizing.\n", myrank);
       break;
     }
     if(queue_isEmpty(tasks) && !requested)
     {
+      fprintf(stderr, "Process %d completed its tasks. Requesting Work\n", myrank);
       freeze_workers();
       /*Ask for work*/
       send_msg[0] = myrank;
