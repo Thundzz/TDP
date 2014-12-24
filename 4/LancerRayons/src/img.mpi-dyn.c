@@ -128,12 +128,14 @@ void process_task(long tile_number){
 
 void* worker_f(void * args){
   while(!finalization){
+    long task= -1;
     pthread_mutex_lock(&mutex);
     if(!queue_isEmpty(tasks)){
-      long task = queue_pop(tasks);
-      process_task(task);
+      task = queue_pop(tasks);
     }
     pthread_mutex_unlock(&mutex);
+    if(task != -1)
+      process_task(task);
   }
   return NULL;
 }
