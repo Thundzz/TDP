@@ -118,9 +118,9 @@ void* worker_f(void * args){
     pthread_mutex_lock(&mutex);
     if(!queue_isEmpty(tasks)){
       long task = queue_pop(tasks);
-      pthread_mutex_unlock(&mutex);
       process_task(task);
     }
+    pthread_mutex_unlock(&mutex);
   }
   return NULL;
 }
@@ -220,7 +220,9 @@ void* negociator_f(void* args){
       }
     } /* End treatment of received message*/
   } /* End while */
+  fprintf(stderr, "Process %d joining workers.\n", myrank);
   join_workers(NBTHREADS, workers);
+  fprintf(stderr, "Process %d successfully joined its workers.\n", myrank);
   return NULL;
 }
 
