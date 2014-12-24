@@ -39,3 +39,6 @@ void queue_delete(Queue* q){
 	free(q);
 }
 
+int queue_length(Queue* q){
+	return (q->cur_size);
+}

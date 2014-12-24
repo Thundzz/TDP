@@ -116,7 +116,7 @@ void* worker_f(void * args){
   return NULL;
 }
 #define MSG_SIZE 3
-#define END_TAG 100
+#define FINALIZATION_TAG 100
 #define REQUESTWORK_TAG 101 
 
 void* negociator_f(void* args){
@@ -133,19 +133,23 @@ void* negociator_f(void* args){
     /* Listen for work messages from others */ 
     MPI_Iprobe(prev, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &status);
     if(1 == res){
-      /* Someone wants work */
+      /* There is some message to process*/
       MPI_Recv(&msg, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-      if(status.MPI_TAG == END_TAG){
-        finalization = 0;
+      /* If it's a finalization message */
+      if(status.MPI_TAG == FINALIZATION_TAG){
+        finalization = 1;
       }
       if(status.MPI_TAG == REQUESTWORK_TAG)
       {
-
+        if(queue_length(tasks) >= 2){
+          long task = queue_pop(tasks);
+          int who = msg[0];
+        }
       }
     } 
   }
   if(finalization){
-    
+
   }
   return NULL;
 }
