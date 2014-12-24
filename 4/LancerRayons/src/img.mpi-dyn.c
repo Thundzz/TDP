@@ -151,6 +151,7 @@ void join_workers(int nbWorkers, pthread_t* threads){
 void* negociator_f(void* args){
   int myrank, nb_others, requested = 0, res= 0;
   MPI_Status st;
+  MPI_Request req;
   pthread_t workers[NBTHREADS];
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
   MPI_Comm_size( MPI_COMM_WORLD, &nb_others);
@@ -169,7 +170,7 @@ void* negociator_f(void* args){
       freeze_workers();
       /*Ask for work*/
       send_msg[0] = myrank;
-      MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD);
+      MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
       requested = 1;
     }
     /* Listen for messages from others */
@@ -179,7 +180,7 @@ void* negociator_f(void* args){
       MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
       /* If the message is a Finalization one */
       if(st.MPI_TAG == FINALIZATION_TAG){
-        MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD);
+        MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD,&req);
         finalization = 1;
       }
       /* If the message is a request of work */
@@ -191,7 +192,7 @@ void* negociator_f(void* args){
         {
           finalization = 1;
           send_msg[0]= myrank;
-          MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, next,FINALIZATION_TAG, MPI_COMM_WORLD);
+          MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, next,FINALIZATION_TAG, MPI_COMM_WORLD, &req);
         }
         /* If I have tasks to give */
         else if(queue_length(tasks) >= 2){
@@ -199,11 +200,11 @@ void* negociator_f(void* args){
           long task = queue_pop(tasks);
           pthread_mutex_unlock(&mutex);
           send_msg[0] = task;
-          MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD);
+          MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD, &req);
         }
         /* Else, I transfer the message to the next node*/
         else{
-         MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD);
+         MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
         }
       }
       /* If the message is a task  */
