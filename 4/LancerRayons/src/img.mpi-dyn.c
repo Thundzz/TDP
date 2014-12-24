@@ -50,6 +50,8 @@ static IMG_BASIC  Img;
  * calculées est commun aux threads et déclarés global. */
 COLOR  *TabColor;
 Queue * tasks;
+int finalization;
+
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -112,11 +114,13 @@ void process_task(long tile_number){
 }
 
 void* worker_f(void * args){
-  while(!queue_isEmpty(tasks)){
-    pthread_mutex_lock(&mutex);
-    long task = queue_pop(tasks);
-    pthread_mutex_unlock(&mutex);
-    process_task(task);
+  while(!finalization){
+    if(!queue_isEmpty(tasks)){
+      pthread_mutex_lock(&mutex);
+      long task = queue_pop(tasks);
+      pthread_mutex_unlock(&mutex);
+      process_task(task);
+    }
   }
   return NULL;
 }
@@ -128,17 +132,33 @@ void unfreeze_workers(){
 
 }
 
+void create_workers(int nbWorkers, pthread_t * threads){
+  int i;
+  for (i = 0; i < nbWorkers; ++i)
+  {
+    pthread_create(&threads[i], NULL, worker_f, NULL);
+  }
+}
+
+void join_workers(int nbWorkers, pthread_t* threads){
+  int i;
+  for (i = 0; i < nbWorkers; ++i)
+  {
+    pthread_join(threads[i], NULL);
+  }
+}
+
 void* negociator_f(void* args){
-  int myrank;
-  int nb_others;
+  int myrank, nb_others, requested = 0, res= 0;
   MPI_Status st;
+  pthread_t workers[NBTHREADS];
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
   MPI_Comm_size( MPI_COMM_WORLD, &nb_others);
   int prev = (myrank +nb_others -1) % nb_others;
   int next = (myrank +1) % nb_others;
-  int res= 0;
-  int finalization = 0, requested = 0;
+  finalization = 0;
   long recv_msg[MSG_SIZE], send_msg[MSG_SIZE];
+  create_workers(NBTHREADS, workers);
   while(1){
     if(finalization)
     {
@@ -197,23 +217,8 @@ void* negociator_f(void* args){
       }
     } /* End treatment of received message*/
   } /* End while */
+  join_workers(NBTHREADS, workers);
   return NULL;
-}
-
-void create_workers(int nbWorkers, pthread_t * threads){
-  int i;
-  for (i = 0; i < nbWorkers; ++i)
-  {
-    pthread_create(&threads[i], NULL, worker_f, NULL);
-  }
-}
-
-void join_workers(int nbWorkers, pthread_t* threads){
-  int i;
-  for (i = 0; i < nbWorkers; ++i)
-  {
-    pthread_join(threads[i], NULL);
-  }
 }
 
 void init_tasks(int myrank, int nb_processes)
@@ -273,10 +278,10 @@ void img (const char *FileNameImg)
 
   init_tasks(myrank, nb_processes);
 
-  pthread_t workers[NBTHREADS];
-  create_workers(NBTHREADS, workers);
-  join_workers(NBTHREADS, workers);
+  pthread_t negociator;
 
+  pthread_create(&negociator, NULL, negociator_f, NULL);
+  pthread_join(negociator, NULL);
 
   if (myrank==0)
   {
