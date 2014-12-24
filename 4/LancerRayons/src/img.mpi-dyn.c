@@ -118,40 +118,65 @@ void* worker_f(void * args){
 #define MSG_SIZE 3
 #define FINALIZATION_TAG 100
 #define REQUESTWORK_TAG 101 
+#define TASK_TAG 102
 
 void* negociator_f(void* args){
   int myrank;
   int nb_others;
-  MPI_Status status;
+  MPI_Status st;
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
   MPI_Comm_size( MPI_COMM_WORLD, &nb_others);
   int prev = (myrank -1) % nb_others;
+  int next = (myrank +1) % nb_others;
   int res= 0;
   int finalization = 0;
-  long msg[MSG_SIZE];
+  long recv_msg[MSG_SIZE], send_msg[MSG_SIZE];
   while(!queue_isEmpty(tasks)){
-    /* Listen for work messages from others */ 
-    MPI_Iprobe(prev, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &status);
+    /* Listen for messages from others */ 
+    MPI_Iprobe(prev, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
     if(1 == res){
-      /* There is some message to process*/
-      MPI_Recv(&msg, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+      /* There is some message to process, let's get it. */
+      MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
       /* If it's a finalization message */
-      if(status.MPI_TAG == FINALIZATION_TAG){
-        finalization = 1;
-      }
-      if(status.MPI_TAG == REQUESTWORK_TAG)
-      {
-        if(queue_length(tasks) >= 2){
-          long task = queue_pop(tasks);
-          int who = msg[0];
+      if(st.MPI_TAG == FINALIZATION_TAG){
+        if(finalization != 1){
+          MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD);
+          finalization = 1;
+        }
+        else{
+        // Do nothing.
         }
       }
-    } 
+      else if(st.MPI_TAG == REQUESTWORK_TAG)
+      {
+        long who = recv_msg[0];
+        /* First, I check wheteher it's my own message */
+        if(who == myrank)
+        {
+          finalization = 1;
+          send_msg[0]= myrank;
+          MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, next,FINALIZATION_TAG, MPI_COMM_WORLD);
+        }
+        /* If I have tasks to give */
+        if(queue_length(tasks) >= 2){
+          pthread_mutex_lock(&mutex);
+          long task = queue_pop(tasks);
+          pthread_mutex_unlock(&mutex);
+          send_msg[0] = task;
+          MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD);
+        }
+        /* Else, I transfer the message to the next node*/
+        else{
+         MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD);
+        }
+      }
+    }
   }
-  if(finalization){
-
+  if(finalization)
+  {
+    return NULL;
   }
-  return NULL;
+ return NULL;
 }
 
 void create_workers(int nbWorkers, pthread_t * threads){
