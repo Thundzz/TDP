@@ -90,7 +90,7 @@ pixel_basic_fake (INDEX i, INDEX j)
 {
   COLOR c;
   c.r=0, c.g = 0, c.b =0;
-  sleep(0.1);
+  usleep(10);
   return (c);
 }
 
@@ -302,6 +302,9 @@ void process_scene(const char *FileNameImg)
 
   pthread_t negociator;
 
+
+  double start, end, elapsed, elapsed_max;
+  start = MPI_Wtime();
   pthread_create(&negociator, NULL, negociator_f, NULL);
   pthread_join(negociator, NULL);
 
@@ -318,6 +321,19 @@ void process_scene(const char *FileNameImg)
   if(myrank == 0)
   {
     write_file(FileNameImg);
+  }
+  end = MPI_Wtime();
+
+  elapsed = end - start;
+  MPI_Reduce(&elapsed, &elapsed_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  if(myrank == 0)
+  {
+    FILE* timefile = fopen("dyn-time.dat", "a");
+    if(timefile != NULL)
+    {
+      fprintf(timefile, "%d %g \n", nb_processes, elapsed_max);
+      fclose(timefile);
+    }
   }
 
   queue_delete(tasks);
