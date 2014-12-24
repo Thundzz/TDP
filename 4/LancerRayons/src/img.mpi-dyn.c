@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "img.h"
 
 #include "macro.h"
@@ -83,6 +84,18 @@ pixel_basic (INDEX i, INDEX j)
 
   return (Ray.Color);
 }
+
+static COLOR
+pixel_basic_fake (INDEX i, INDEX j)
+{
+  COLOR c;
+  c.r=0, c.g = 0, c.b =0;
+  sleep(0.1);
+  return (c);
+}
+
+COLOR (*core_func) (INDEX i, INDEX j);
+
 /* index is the index of a tile
  * tpl is the number of tiles per line
  * x, and y are the location where the coordinates
@@ -107,7 +120,7 @@ void process_task(long tile_number){
       {
         int I= fpx+k, J = fpy+l;
         if(I < Img.Pixel.i && J< Img.Pixel.j){
-          TabColor [J*Img.Pixel.i + I ] = pixel_basic (I, J);
+          TabColor [J*Img.Pixel.i + I ] = core_func (I, J);
         }
       }
     }
@@ -126,10 +139,9 @@ void* worker_f(void * args){
 }
 
 void freeze_workers(){
-
 }
-void unfreeze_workers(){
 
+void unfreeze_workers(){
 }
 
 void create_workers(int nbWorkers, pthread_t * threads){
@@ -155,7 +167,6 @@ void* negociator_f(void* args){
   pthread_t workers[NBTHREADS];
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
   MPI_Comm_size( MPI_COMM_WORLD, &nb_others);
-  int prev = (myrank +nb_others -1) % nb_others;
   int next = (myrank +1) % nb_others;
   finalization = 0;
   long recv_msg[MSG_SIZE], send_msg[MSG_SIZE];
@@ -163,12 +174,10 @@ void* negociator_f(void* args){
   while(1){
     if(finalization)
     {
-      fprintf(stderr, "Process %d finalizing.\n", myrank);
       break;
     }
     if(queue_isEmpty(tasks) && !requested)
     {
-      fprintf(stderr, "Process %d completed its tasks. Requesting Work\n", myrank);
       freeze_workers();
       /*Ask for work*/
       send_msg[0] = myrank;
@@ -228,9 +237,7 @@ void* negociator_f(void* args){
       }
     } /* End treatment of received message*/
   } /* End while */
-  fprintf(stderr, "Process %d joining workers.\n", myrank);
   join_workers(NBTHREADS, workers);
-  fprintf(stderr, "Process %d successfully joined its workers.\n", myrank);
   return NULL;
 }
 
@@ -279,7 +286,7 @@ void write_file(const char * FileNameImg)
   EXIT_FILE (FileImg);
 }
 
-void img (const char *FileNameImg)
+void real_processing(const char *FileNameImg)
 {
   int myrank, nb_processes;
   MPI_Init( NULL, NULL ); 
@@ -314,4 +321,23 @@ void img (const char *FileNameImg)
   queue_delete(tasks);
   EXIT_MEM (TabColor);  
   MPI_Finalize();
+}
+
+void fake_processing(const char *FileNameImg)
+{
+  core_func = pixel_basic_fake;
+  real_processing(FileNameImg);
+}
+
+void img (const char *FileNameImg)
+{
+  core_func = pixel_basic;
+  if(!strcmp(FileNameImg, "jouet"))
+  {
+    fake_processing(FileNameImg);
+  }
+  else
+  {
+    real_processing(FileNameImg);
+  }
 }
