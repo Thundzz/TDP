@@ -286,7 +286,7 @@ void write_file(const char * FileNameImg)
   EXIT_FILE (FileImg);
 }
 
-void real_processing(const char *FileNameImg)
+void process_scene(const char *FileNameImg)
 {
   int myrank, nb_processes;
   MPI_Init( NULL, NULL ); 
@@ -323,21 +323,18 @@ void real_processing(const char *FileNameImg)
   MPI_Finalize();
 }
 
-void fake_processing(const char *FileNameImg)
-{
-  core_func = pixel_basic_fake;
-  real_processing(FileNameImg);
-}
 
 void img (const char *FileNameImg)
 {
-  core_func = pixel_basic;
+
   if(!strcmp(FileNameImg, "jouet"))
   {
-    fake_processing(FileNameImg);
+    core_func = pixel_basic_fake;
+    process_scene(FileNameImg);
   }
   else
   {
-    real_processing(FileNameImg);
+    core_func = pixel_basic;
+    process_scene(FileNameImg);
   }
 }
