@@ -33,6 +33,11 @@
 
 #define NBTHREADS 4
 
+#define MSG_SIZE 3
+#define FINALIZATION_TAG 100
+#define REQUESTWORK_TAG 101 
+#define TASK_TAG 102
+
 typedef struct {
   COUPLE  Pixel;
 } IMG_BASIC;
@@ -115,10 +120,13 @@ void* worker_f(void * args){
   }
   return NULL;
 }
-#define MSG_SIZE 3
-#define FINALIZATION_TAG 100
-#define REQUESTWORK_TAG 101 
-#define TASK_TAG 102
+
+void freeze_workers(){
+
+}
+void unfreeze_workers(){
+  
+}
 
 void* negociator_f(void* args){
   int myrank;
@@ -129,24 +137,32 @@ void* negociator_f(void* args){
   int prev = (myrank -1) % nb_others;
   int next = (myrank +1) % nb_others;
   int res= 0;
-  int finalization = 0;
+  int finalization = 0, requested = 0;
   long recv_msg[MSG_SIZE], send_msg[MSG_SIZE];
-  while(!queue_isEmpty(tasks)){
-    /* Listen for messages from others */ 
+  while(1){
+    /* Listen for messages from others */
+    if(finalization)
+    {
+      break;
+    }
+    if(queue_isEmpty(tasks) && !requested)
+    {
+      freeze_workers();
+      /*Ask for work*/
+      send_msg[0] = myrank;
+      MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD);
+      requested = 1;
+    }
     MPI_Iprobe(prev, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
+    /* There is some message to process, let's get it. */
     if(1 == res){
-      /* There is some message to process, let's get it. */
       MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
-      /* If it's a finalization message */
+      /* If the message is a Finalization one */
       if(st.MPI_TAG == FINALIZATION_TAG){
-        if(finalization != 1){
-          MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD);
-          finalization = 1;
-        }
-        else{
-        // Do nothing.
-        }
+        MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD);
+        finalization = 1;
       }
+      /* If the message is a request of work */
       else if(st.MPI_TAG == REQUESTWORK_TAG)
       {
         long who = recv_msg[0];
@@ -170,13 +186,17 @@ void* negociator_f(void* args){
          MPI_Send(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD);
         }
       }
-    }
-  }
-  if(finalization)
-  {
-    return NULL;
-  }
- return NULL;
+      /* If the message is a task  */
+      else if(st.MPI_TAG == TASK_TAG){
+        long task = recv_msg[0];
+        pthread_mutex_lock(&mutex);
+        queue_push(tasks, task);
+        pthread_mutex_unlock(&mutex);
+        unfreeze_workers();
+      }
+    } /* End treatment of received message*/
+  } /* End while */
+  return NULL;
 }
 
 void create_workers(int nbWorkers, pthread_t * threads){
