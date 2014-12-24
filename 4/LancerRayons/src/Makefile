@@ -62,7 +62,8 @@ HDR_CAMERA = cmr.h
 #pour changer de type de lancer de rayons, mettre le bon .c
 #SRC_IMAGE = img.basic.c
 #SRC_IMAGE = img.mpi-static.c
-SRC_IMAGE = img.mpi-thread.c
+#SRC_IMAGE = img.mpi-thread.c
+SRC_IMAGE = img.mpi-dyn.c
 HDR_IMAGE = $(SRC_IMAGE:.c=.h)
 
 #pour changer de type de lancer de rayons, mettre le bon .c
@@ -187,3 +188,8 @@ img.mpi-static.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h
 img.mpi-thread.o: ../include/type.h ../include/macro.h 
 img.mpi-thread.o: ../include/exit-if.h ../include/const.h ../include/type_spec.h
 img.mpi-thread.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h
+
+#Add compile rules for the threaded MPI version
+img.mpi-dyn.o: ../include/type.h ../include/macro.h 
+img.mpi-dyn.o: ../include/exit-if.h ../include/const.h ../include/type_spec.h
+img.mpi-dyn.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h
