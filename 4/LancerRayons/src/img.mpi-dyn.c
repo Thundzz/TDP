@@ -134,7 +134,7 @@ void* negociator_f(void* args){
   MPI_Status st;
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
   MPI_Comm_size( MPI_COMM_WORLD, &nb_others);
-  int prev = (myrank -1) % nb_others;
+  int prev = (myrank +nb_others -1) % nb_others;
   int next = (myrank +1) % nb_others;
   int res= 0;
   int finalization = 0, requested = 0;
