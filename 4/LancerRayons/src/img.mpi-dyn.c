@@ -125,7 +125,7 @@ void freeze_workers(){
 
 }
 void unfreeze_workers(){
-  
+
 }
 
 void* negociator_f(void* args){
@@ -140,7 +140,6 @@ void* negociator_f(void* args){
   int finalization = 0, requested = 0;
   long recv_msg[MSG_SIZE], send_msg[MSG_SIZE];
   while(1){
-    /* Listen for messages from others */
     if(finalization)
     {
       break;
@@ -153,6 +152,7 @@ void* negociator_f(void* args){
       MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD);
       requested = 1;
     }
+    /* Listen for messages from others */
     MPI_Iprobe(prev, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
     /* There is some message to process, let's get it. */
     if(1 == res){
@@ -174,7 +174,7 @@ void* negociator_f(void* args){
           MPI_Send(&send_msg, MSG_SIZE, MPI_LONG, next,FINALIZATION_TAG, MPI_COMM_WORLD);
         }
         /* If I have tasks to give */
-        if(queue_length(tasks) >= 2){
+        else if(queue_length(tasks) >= 2){
           pthread_mutex_lock(&mutex);
           long task = queue_pop(tasks);
           pthread_mutex_unlock(&mutex);
@@ -193,6 +193,7 @@ void* negociator_f(void* args){
         queue_push(tasks, task);
         pthread_mutex_unlock(&mutex);
         unfreeze_workers();
+        requested = 0;
       }
     } /* End treatment of received message*/
   } /* End while */
