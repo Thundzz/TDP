@@ -38,8 +38,8 @@ LDLIBS = -lm
 
 # application : fichier executable
 LANCEUR_OBJ = lanceur.o
-#LANCEUR_OBJ = lanceur_jouet.o
-BIN = lanceur
+LANCEUR_JOUET_OBJ = lanceur_jouet.o
+BIN = lanceur lanceur_jouet
 
 # tests de modules locaux.
 TEST= test_queue.out
@@ -122,6 +122,9 @@ install: all
 
 uninstall:
 	cd $(BIN_DIR) ;	$(RM) $(BIN)
+
+lanceur_jouet: $(LANCEUR_JOUET_OBJ) queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 lanceur: $(LANCEUR_OBJ) queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
