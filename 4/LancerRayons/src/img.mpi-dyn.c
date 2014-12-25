@@ -54,7 +54,7 @@ static IMG_BASIC  Img;
 COLOR  *TabColor;
 Queue * tasks;
 int finalization;
-
+int __nosteal;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -122,6 +122,7 @@ void process_task(long tile_number){
 void process_task_fake(long tile_number){
   int myrank;
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
+  printf("myrank %d, tasktime %dus\n", myrank, __tasktime[tile_number]);
   usleep(__tasktime[tile_number]);
 }
 
@@ -172,72 +173,85 @@ void* negociator_f(void* args){
   finalization = 0;
   long recv_msg[MSG_SIZE], send_msg[MSG_SIZE];
   create_workers(NBTHREADS, workers);
-  while(1){
-    if(finalization)
+  if(__nosteal == 1)
+  {
+    while(1)
     {
-      break;
-    }
-    if(queue_isEmpty(tasks) && !requested)
-    {
-      freeze_workers();
-      /*Ask for work*/
-      send_msg[0] = myrank;
-      MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
-      requested = 1;
-    }
-    /* Listen for messages from others */
-    MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
-    /* There is some message to process, let's get it. */
-    if(1 == res){
-      MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
-      /* If the message is a Finalization one */
-      if(st.MPI_TAG == FINALIZATION_TAG){
-        MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD,&req);
+      if(finalization)
+        break;
+      if(queue_isEmpty(tasks))
         finalization = 1;
-      }
-      /* If the message is a request of work */
-      else if(st.MPI_TAG == REQUESTWORK_TAG)
+    }
+  }
+  else
+  {
+    while(1){
+      if(finalization)
       {
-        long who = recv_msg[0];
-        /* First, I check wheteher it's my own message */
-        if(who == myrank)
-        {
+        break;
+      }
+      if(queue_isEmpty(tasks) && !requested)
+      {
+        freeze_workers();
+        /*Ask for work*/
+        send_msg[0] = myrank;
+        MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
+        requested = 1;
+      }
+      /* Listen for messages from others */
+      MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &res, &st);
+      /* There is some message to process, let's get it. */
+      if(1 == res){
+        MPI_Recv(&recv_msg, MSG_SIZE, MPI_LONG, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
+        /* If the message is a Finalization one */
+        if(st.MPI_TAG == FINALIZATION_TAG){
+          MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next, FINALIZATION_TAG, MPI_COMM_WORLD,&req);
           finalization = 1;
-          send_msg[0]= myrank;
-          MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, next,FINALIZATION_TAG, MPI_COMM_WORLD, &req);
         }
-        /* If I have tasks to give */
-        else if(queue_length(tasks) >= 2){
-          long task = -1;
-          pthread_mutex_lock(&mutex);
-          if(!queue_isEmpty(tasks)){
-            task = queue_pop(tasks);
+        /* If the message is a request of work */
+        else if(st.MPI_TAG == REQUESTWORK_TAG)
+        {
+          long who = recv_msg[0];
+          /* First, I check wheteher it's my own message */
+          if(who == myrank)
+          {
+            finalization = 1;
+            send_msg[0]= myrank;
+            MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, next,FINALIZATION_TAG, MPI_COMM_WORLD, &req);
           }
-          pthread_mutex_unlock(&mutex);
-          if(task != -1){
-            send_msg[0] = task;
-            MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD, &req);
+          /* If I have tasks to give */
+          else if(queue_length(tasks) >= 1){
+            long task = -1;
+            pthread_mutex_lock(&mutex);
+            if(!queue_isEmpty(tasks)){
+              task = queue_pop(tasks);
+            }
+            pthread_mutex_unlock(&mutex);
+            if(task != -1){
+              send_msg[0] = task;
+              MPI_Isend(&send_msg, MSG_SIZE, MPI_LONG, who,TASK_TAG,MPI_COMM_WORLD, &req);
+            }
+            else{
+              MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
+            }
           }
+          /* Else, I transfer the message to the next node*/
           else{
-            MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
+           MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
           }
         }
-        /* Else, I transfer the message to the next node*/
-        else{
-         MPI_Isend(&recv_msg, MSG_SIZE, MPI_LONG, next,REQUESTWORK_TAG, MPI_COMM_WORLD, &req);
+        /* If the message is a task  */
+        else if(st.MPI_TAG == TASK_TAG){
+          long task = recv_msg[0];
+          pthread_mutex_lock(&mutex);
+          queue_push(tasks, task);
+          pthread_mutex_unlock(&mutex);
+          unfreeze_workers();
+          requested = 0;
         }
-      }
-      /* If the message is a task  */
-      else if(st.MPI_TAG == TASK_TAG){
-        long task = recv_msg[0];
-        pthread_mutex_lock(&mutex);
-        queue_push(tasks, task);
-        pthread_mutex_unlock(&mutex);
-        unfreeze_workers();
-        requested = 0;
-      }
-    } /* End treatment of received message*/
-  } /* End while */
+      } /* End treatment of received message*/
+    } /* End while */
+  }/*end steal*/
   join_workers(NBTHREADS, workers);
   return NULL;
 }
@@ -269,7 +283,7 @@ void init_tasks_fake(int myrank, int nb_processes)
   INDEX j;
   /* Nombre de carreaux */
   int nb_carreaux = __numtasks;
-  __tasktime = malloc(nb_carreaux*sizeof(double));
+  __tasktime = calloc(nb_carreaux, sizeof(double));
 
   /* Nombre de carreaux dont doit s'occuper chaque processus. */
   int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
@@ -361,6 +375,7 @@ void img (const char *FileNameImg)
 
   if(FileNameImg == NULL)
   {
+    __nosteal = __steal_mode_jouet;
     init_tasks_fake(myrank, nb_processes);
     core_func = process_task_fake;
     process_scene(FileNameImg, 0, myrank, nb_processes);
@@ -370,7 +385,8 @@ void img (const char *FileNameImg)
   {
     INIT_MEM (TabColor, Img.Pixel.i*Img.Pixel.j, COLOR);
     int img_size = Img.Pixel.i*Img.Pixel.j*3;
-    
+    __nosteal = 0;
+
     init_tasks(myrank, nb_processes);
     core_func = process_task;
     process_scene(FileNameImg, img_size, myrank, nb_processes);
