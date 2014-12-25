@@ -8,13 +8,13 @@ Run the habitual :
 That will create three binaries in the bin/ folder :
 *	lanceur: for the ray tracing program using static distribution with
 	task stealing
-*	lanceur_: for the ray tracing program 
+*	lanceur_static: for the ray tracing program 
 *	lanceur_jouet: for the toy program using static distribution with or without 
 	task stealing
 
 #EXECUTION:
 
-* In order to run the ray tracing program, lanceur and lanceur_: 
+* In order to run the ray tracing program, lanceur and lanceur_static: 
 ```
 mpiexec -np <nbProcesses> ./lanceur <scn filename>
 ``` 
@@ -35,4 +35,9 @@ mpiexec -np <nbProcesses> ./lanceur_jouet -n <nb_tasks> [OPTIONS]
 	* -h or --help        	prints the help
 
 #BENCHMAKS
-Run benchmark.rb
+See and run benchmark.rb
+
+* Call perf function with 3 arguments
+	* argument 1 : max number of processes to run the benchmark
+	* argument 2 : program name (lanceur, lanceur_static or lanceur_jouet)
+	* argument 3 : .scn file name
