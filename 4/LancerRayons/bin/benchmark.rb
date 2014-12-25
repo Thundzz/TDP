@@ -27,21 +27,21 @@ def gen_plot_script(input, pltout, pngout)
 	end 
 end
 
-def perf(nbProcess, file)
+def perf(nbProcess, prog, file)
 	time = {}
 	speedup_name = "speedup#{nbProcess}.dat"
 	for i in 1..nbProcess
-		system("echo mpiexec -np #{i} ./lanceur #{file}")
-		system("mpiexec -np #{i} ./lanceur #{file}")
-		File.open("dyn-time.dat") do |timefile|
+		system("echo mpiexec -np #{i} #{prog} #{file}")
+		system("mpiexec -np #{i} #{prog} #{file}")
+		File.open("time.dat") do |timefile|
 			timefile.each_line do |line|
 				time[i] = line.split(" ")[1].to_f
 			end
 		end
 	end
 
-	gen_speedup_file("dyn-time.dat", speedup_name);
+	gen_speedup_file("time.dat", speedup_name);
 	gen_plot_script(speedup_name, "plot_"+speedup_name, speedup_name+".png")
 end
 
-perf(16, "jouet");
+perf(16, "./lanceur_static" , "tetra");

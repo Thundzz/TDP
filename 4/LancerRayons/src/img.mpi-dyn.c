@@ -361,7 +361,7 @@ void process_scene(const char *FileNameImg, int img_size, int myrank, int nb_pro
  
   if(myrank == 0)
   {
-    FILE* timefile = fopen("dyn-time.dat", "a");
+    FILE* timefile = fopen("time.dat", "a");
     if(timefile != NULL)
     {
       fprintf(timefile, "%d %g \n", nb_processes, elapsed_max);

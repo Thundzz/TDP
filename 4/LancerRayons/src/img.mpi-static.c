@@ -99,6 +99,10 @@ img (const char *FileNameImg)
 
   int start_j = myrank * q ;
   int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
+
+  double start, end, elapsed, elapsed_max;
+  start = MPI_Wtime();
+  
   /* j correspond au carreau qu'on est en train de traiter*/
   for (j=start_j; j<= end_j; j++){
     long carreau_courant =  ((long) j * N) % C;
@@ -124,6 +128,23 @@ img (const char *FileNameImg)
   {
    MPI_Reduce(TabColor, NULL, Img.Pixel.i*Img.Pixel.j*3, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD); 
   }
+
+    
+  end = MPI_Wtime();
+  elapsed = end - start;
+  MPI_Reduce(&elapsed, &elapsed_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+ 
+  if(myrank == 0)
+  {
+    FILE* timefile = fopen("time.dat", "a");
+    if(timefile != NULL)
+    {
+      fprintf(timefile, "%d %g \n", nb_processes, elapsed_max);
+      fclose(timefile);
+    }
+    printf("Benchmark time : %gs\n", elapsed_max);
+  }
+
   // Si je suis le root, j'écris dans le fichier
   if(myrank == 0)
   {
