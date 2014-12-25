@@ -25,12 +25,12 @@ int main (int argc, char **argv)
 	int set_numtasks = 0;
 
 	int             c;
-	const char    * short_opt = "ul:n:t:hs";
+	const char    * short_opt = "bn:N:t:hs";
 	struct option   long_opt[] =
 	{
-		{"uniform",          no_argument, NULL, 'u'},
-		{"unlucky",          required_argument, NULL, 'l'},
-		{"numtasks",         required_argument, NULL, 'n'},
+		{"bad",          no_argument, NULL, 'b'},
+		{"numstasks",         required_argument, NULL, 'n'},
+		{"numbtasks",         required_argument, NULL, 'n'},
 		{"time",         required_argument, NULL, 't'},	
 		{"nosteal",         no_argument, NULL, 's'},
 		{"help",          	 no_argument, NULL, 'h'},
@@ -45,17 +45,17 @@ int main (int argc, char **argv)
 			case 0:        /* long options toggles */
 			break;
 
-			case 'u':
-			break;
-
-			case 'l':
-			__dist = UNLUCKY;
-			__unlucky_proc = atoi(optarg);
+			case 'b':
+			__dist = BAD;
 			break;
 
 			case 'n':
-			set_numtasks = 1;
-			__numtasks = atoi(optarg);
+			set_numtasks += 1;
+			__numstasks = atoi(optarg);
+			break;		
+			case 'N':
+			set_numtasks += 1;
+			__numbtasks = atoi(optarg);
 			break;
 
 			case 't':
@@ -67,12 +67,10 @@ int main (int argc, char **argv)
 			break;
 
 			case 'h':
-			printf("Usage: %s -n 'number_of_tasks' [OPTIONS]\n", argv[0]);
+			printf("Usage: %s -n 'number_of_small_tasks' -N 'number_of_big_tasks' [OPTIONS]\n", argv[0]);
 			printf("OPTIONS: \n");
-			printf("  -u, --uniform  (default)    	uniform distribution of tasks\n");
-			printf("  -l, --unlucky  [ARGUMENT]    	one designated process" 
-													"is given 10 times longer tasks\n");
-			printf("  -t, --time  [ARGUMENT]    time of a task, in usec" 
+			printf("  -b, --bad     			bad distribution of tasks\n");
+			printf("  -t, --time  [ARGUMENT]    time of a small task, in usec" 
 												"(default: 1000 usec)\n");			
 			printf("  -s, --nosteal    			no task steal version \n");
 			printf("  -h, --help        		print this help and exit\n");
@@ -91,21 +89,18 @@ int main (int argc, char **argv)
 		};
 	};
 
-	if(!set_numtasks)
+	if(set_numtasks < 2)
 	{
-		fprintf(stderr, "You must set the number of tasks. Try `%s --help' for more information.\n", argv[0]);
+		fprintf(stderr, "You must set the number of small and big tasks.\n");
+		fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
 		return -2;
 	}
 	else
 	{
-		printf("Number of tasks : %d\n", __numtasks);
+		printf("Number of small tasks : %d\n", __numbtasks);
+		printf("Number of big tasks: %d\n",	__numstasks);
 		printf("Distribution : %d\n", __dist);
 		printf("Task time : %d\n", __time);
-		if(__dist == UNLUCKY)
-		{
-			printf("Unlucky process : %d\n", __unlucky_proc);
-			printf("Long tasks time : %d\n", __time*10);
-		}
 		if(__steal_mode_jouet == NO_STEAL)
 		{
 			printf("No-steal mode activated. Tasks distribution will be static\n");

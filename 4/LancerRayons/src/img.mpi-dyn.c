@@ -47,8 +47,8 @@ typedef struct {
 /* Parametres pour la version jouet */
 int * __tasktime;
 Distribution __dist;
-int __unlucky_proc;
-int __numtasks;
+int __numstasks;
+int __numbtasks;
 int __time;
 int __steal_mode_jouet;
 
@@ -125,9 +125,6 @@ void process_task(long tile_number){
 
 /* Une fonction qui s'occupe de la tuile de numéro tile_number */
 void process_task_fake(long tile_number){
-  int myrank;
-  MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
-  printf("myrank %d, tasktime %dus\n", myrank, __tasktime[tile_number]);
   usleep(__tasktime[tile_number]);
 }
 
@@ -287,23 +284,34 @@ void init_tasks_fake(int myrank, int nb_processes)
 {
   INDEX j;
   /* Nombre de carreaux */
-  int nb_carreaux = __numtasks;
+  int nb_carreaux = __numstasks + __numbtasks;
   __tasktime = calloc(nb_carreaux, sizeof(double));
 
   /* Nombre de carreaux dont doit s'occuper chaque processus. */
   int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
 
-  int C = nb_carreaux;
-  int N = C+1;
+  /* Nombre de gros carreaux dont doit s'occuper chaque processus. */
+  int bq;
+  if(__dist == UNIFORM)
+  {
+    bq = (__numbtasks + nb_processes-1)/nb_processes;
+  }
+  else
+  {
+    bq = MIN(q, __numbtasks - myrank*q);
+  }
+
   int start_j = myrank * q ;
   int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
 
   /* Mise en place de la queue de tâche partagée entre les threads*/
   tasks = queue_init(2*(end_j-start_j));
   for (j=start_j; j<= end_j; j++){
-    long tile_number =  ((long) j * N) % C;
-    if(__dist == UNLUCKY && myrank == __unlucky_proc)
+    long tile_number =  j;
+    if(bq > 0){
       __tasktime[tile_number] = 10*__time;
+      bq--;
+    }
     else
       __tasktime[tile_number] = __time;
     queue_push(tasks, tile_number);
@@ -383,7 +391,7 @@ void img (const char *FileNameImg)
     __nosteal = __steal_mode_jouet;
     init_tasks_fake(myrank, nb_processes);
     core_func = process_task_fake;
-    process_scene(FileNameImg, 0, myrank, nb_processes);
+    process_scene(NULL, 0, myrank, nb_processes);
     free(__tasktime);
   }
   else

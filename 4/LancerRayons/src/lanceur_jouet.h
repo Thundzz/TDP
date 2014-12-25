@@ -7,12 +7,12 @@
 #define STEAL 0
 
 typedef enum Distribution{
-	UNIFORM, UNLUCKY
+	UNIFORM, BAD
 }Distribution;
 
 extern Distribution __dist;
-extern int __unlucky_proc;
-extern int __numtasks;
+extern int __numstasks;
+extern int __numbtasks;
 extern int __time;
 extern int * __tasktime;
 extern int __steal_mode_jouet;

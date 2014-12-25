@@ -21,16 +21,14 @@ mpiexec -np <nbProcesses> ./lanceur <scn filename>
 
 * In order to run the toy program, lanceur_jouet: 
 ```
-mpiexec -np <nbProcesses> ./lanceur_jouet -n <nb_tasks> [OPTIONS]
+mpiexec -np <nbProcesses> ./lanceur_jouet -n <nb_small_tasks> -N <nb_big_tasks> [OPTIONS]
 ``` 
 * Different options can be set for the toy program
-	* -u or --uniform  sets the same time for every task on every process (enabled by default)
-	* -l or --unlucky  [ARGUMENT] creates a bad distribution by extending the time of
-								the tasks given to the process which index is set as the argument
-	* -t or --time  [ARGUMENT]   sets the time in usec of every task if the uniform distribution is set, 
-								if the unlucky distribution is set, this option sets the time
-								of every tasks not given to the unlucky process
-								(1000)
+	* -b or --bad  				creates a bad distribution by giving all the big tasks to the processes
+								that have the lowest rank, and the small tasks to the others.
+								(By default, the big tasks are distributed equal among the processes)
+	* -t or --time  [ARGUMENT]   sets the time in usec of the small tasks. Big tasks are 10 times longer.
+								(Default 1000 us for small tasks, 10000 us for big tasks)
 	* -s or --nosteal    	if this option is entered, task stealing will be disabled 
 	* -h or --help        	prints the help
 
