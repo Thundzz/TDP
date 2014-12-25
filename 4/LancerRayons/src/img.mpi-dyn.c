@@ -46,6 +46,11 @@ typedef struct {
 
 /* Parametres pour la version jouet */
 int * __tasktime;
+Distribution __dist;
+int __unlucky_proc;
+int __numtasks;
+int __time;
+int __steal_mode_jouet;
 
 static IMG_BASIC  Img;
 
@@ -362,7 +367,7 @@ void process_scene(const char *FileNameImg, int img_size, int myrank, int nb_pro
       fprintf(timefile, "%d %g \n", nb_processes, elapsed_max);
       fclose(timefile);
     }
-    printf("\n Parallel process time : %gs\n", elapsed_max);
+    printf("Benchmark time : %gs\n", elapsed_max);
   }
 }
 

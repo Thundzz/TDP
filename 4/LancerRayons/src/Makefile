@@ -37,8 +37,8 @@ CFLAGS = -g -Wall
 LDLIBS = -lm
 
 # application : fichier executable
-#LANCEUR_OBJ = lanceur.o
-LANCEUR_OBJ = lanceur_jouet.o
+LANCEUR_OBJ = lanceur.o
+#LANCEUR_OBJ = lanceur_jouet.o
 BIN = lanceur
 
 # tests de modules locaux.

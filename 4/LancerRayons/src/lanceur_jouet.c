@@ -17,12 +17,6 @@ REAL     Epsilon;
 INDEX    NbrLevel;
 /////////////////////////////
 
-Distribution __dist;
-int __unlucky_proc;
-int __numtasks;
-int __time;
-int __steal_mode_jouet;
-
 int main (int argc, char **argv)
 {
 	__dist = UNIFORM;
