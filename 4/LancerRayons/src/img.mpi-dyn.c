@@ -15,17 +15,17 @@
 #include <string.h>
 #include <unistd.h>
 #include "img.h"
+#include "queue.h"
 
 #include "macro.h"
 #include "const.h"
 #include "type.h"
 #include "type_spec.h"
-
-#include "queue.h"
 #include "lanceur.h"
 #include "scn.h"
 #include "bnd.h"
 #include "cmr.h"
+
 #include <mpi.h>
 #include <pthread.h>
 
@@ -43,7 +43,15 @@ typedef struct {
   COUPLE  Pixel;
 } IMG_BASIC;
 
-
+/* Parametres pour la version jouet */
+typedef enum Distribution{
+  UNIFORM, UNLUCKY
+}Distribution;
+Distribution __dist = UNIFORM;
+int __unlucky_proc = 0;
+int __numtasks = 10000;
+int __time = 1000;
+int * __tasktime;
 
 static IMG_BASIC  Img;
 
@@ -55,7 +63,6 @@ int finalization;
 
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 BOOL
 file_img (FILE *File)
@@ -85,16 +92,7 @@ pixel_basic (INDEX i, INDEX j)
   return (Ray.Color);
 }
 
-static COLOR
-pixel_basic_fake (INDEX i, INDEX j)
-{
-  COLOR c;
-  c.r=0, c.g = 0, c.b =0;
-  usleep(10);
-  return (c);
-}
-
-COLOR (*core_func) (INDEX i, INDEX j);
+void (*core_func) (long tile_number);
 
 /* index is the index of a tile
  * tpl is the number of tiles per line
@@ -120,10 +118,15 @@ void process_task(long tile_number){
       {
         int I= fpx+k, J = fpy+l;
         if(I < Img.Pixel.i && J< Img.Pixel.j){
-          TabColor [J*Img.Pixel.i + I ] = core_func (I, J);
+          TabColor [J*Img.Pixel.i + I ] = pixel_basic(I, J);
         }
       }
     }
+}
+
+/* Une fonction qui s'occupe de la tuile de numéro tile_number */
+void process_task_fake(long tile_number){
+  usleep(__tasktime[tile_number]);
 }
 
 void* worker_f(void * args){
@@ -135,7 +138,7 @@ void* worker_f(void * args){
     }
     pthread_mutex_unlock(&mutex);
     if(task != -1)
-      process_task(task);
+      core_func(task);
   }
   return NULL;
 }
@@ -265,6 +268,33 @@ void init_tasks(int myrank, int nb_processes)
   }
 }
 
+void init_tasks_fake(int myrank, int nb_processes)
+{
+  INDEX j;
+  /* Nombre de carreaux */
+  int nb_carreaux = __numtasks;
+  __tasktime = malloc(nb_carreaux*sizeof(int));
+
+  /* Nombre de carreaux dont doit s'occuper chaque processus. */
+  int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
+
+  int C = nb_carreaux;
+  int N = C+1;
+  int start_j = myrank * q ;
+  int end_j = MIN( (myrank+1)* q -1, nb_carreaux-1);
+
+  /* Mise en place de la queue de tâche partagée entre les threads*/
+  tasks = queue_init(2*(end_j-start_j));
+  for (j=start_j; j<= end_j; j++){
+    long tile_number =  ((long) j * N) % C;
+    if(__dist == UNLUCKY && myrank == __unlucky_proc)
+      __tasktime[tile_number] = 10*__time;
+    else
+      __tasktime[tile_number] = __time;
+    queue_push(tasks, tile_number);
+  }
+}
+
 void write_file(const char * FileNameImg)
 {
   INDEX  i;
@@ -288,26 +318,16 @@ void write_file(const char * FileNameImg)
   EXIT_FILE (FileImg);
 }
 
-void process_scene(const char *FileNameImg)
+void process_scene(const char *FileNameImg, int img_size, int myrank, int nb_processes)
 {
-  int myrank, nb_processes;
-  MPI_Init( NULL, NULL ); 
-  MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
-  MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
-
-  INIT_MEM (TabColor, Img.Pixel.i*Img.Pixel.j, COLOR);
-  int img_size = Img.Pixel.i*Img.Pixel.j*3;
-
-  init_tasks(myrank, nb_processes);
-
   pthread_t negociator;
-
 
   double start, end, elapsed, elapsed_max;
   start = MPI_Wtime();
+
   pthread_create(&negociator, NULL, negociator_f, NULL);
   pthread_join(negociator, NULL);
-
+  
   if (myrank==0)
   {
     MPI_Reduce(MPI_IN_PLACE, TabColor, img_size, 
@@ -318,14 +338,11 @@ void process_scene(const char *FileNameImg)
     MPI_Reduce(TabColor, NULL, img_size, 
       MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD); 
   }
-  if(myrank == 0)
-  {
-    write_file(FileNameImg);
-  }
+    
   end = MPI_Wtime();
-
   elapsed = end - start;
   MPI_Reduce(&elapsed, &elapsed_max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+ 
   if(myrank == 0)
   {
     FILE* timefile = fopen("dyn-time.dat", "a");
@@ -335,24 +352,39 @@ void process_scene(const char *FileNameImg)
       fclose(timefile);
     }
   }
-
-  queue_delete(tasks);
-  EXIT_MEM (TabColor);  
-  MPI_Finalize();
 }
 
 
 void img (const char *FileNameImg)
 {
+  int myrank, nb_processes;
+  MPI_Init( NULL, NULL ); 
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
+  MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
   if(!strcmp(FileNameImg, "jouet"))
   {
-    core_func = pixel_basic_fake;
-    process_scene(FileNameImg);
+    init_tasks_fake(myrank, nb_processes);
+    core_func = process_task_fake;
+    process_scene(FileNameImg, 0, myrank, nb_processes);
   }
   else
   {
-    core_func = pixel_basic;
-    process_scene(FileNameImg);
+    INIT_MEM (TabColor, Img.Pixel.i*Img.Pixel.j, COLOR);
+    int img_size = Img.Pixel.i*Img.Pixel.j*3;
+    
+    init_tasks(myrank, nb_processes);
+    core_func = process_task;
+    process_scene(FileNameImg, img_size, myrank, nb_processes);
+
+    if(myrank == 0)
+    {
+      write_file(FileNameImg);
+    }
+    EXIT_MEM (TabColor);  
   }
+
+  queue_delete(tasks);
+  
+  MPI_Finalize();
 }

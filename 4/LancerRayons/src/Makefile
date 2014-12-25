@@ -110,7 +110,7 @@ all: $(BIN) $(TEST)
 
 #
 clean:
-	$(RM) *.o *~
+	$(RM) *.o *~ *.out
 
 realclean: clean
 	$(RM) $(BIN)
@@ -145,7 +145,7 @@ bnd.basic.o: lanceur.h bnd.h
 bnd.voxel.o: ../include/macro.h
 bnd.voxel.o: ../include/exit-if.h ../include/const.h
 bnd.voxel.o: ../include/type.h ../include/type_spec.h ett.h geo.h class.h
-bnd.voxel.o: lanceur.h bnd.h
+bnd.voxel.o: lanceur.h bnd.h 
 cmr.basic.o: cmr.h ../include/type.h
 cmr.basic.o: ../include/type_spec.h ett.h geo.h ../include/macro.h
 cmr.basic.o: ../include/exit-if.h ../include/const.h
@@ -192,4 +192,4 @@ img.mpi-thread.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h
 #Add compile rules for the threaded MPI version
 img.mpi-dyn.o: ../include/type.h ../include/macro.h 
 img.mpi-dyn.o: ../include/exit-if.h ../include/const.h ../include/type_spec.h
-img.mpi-dyn.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h
+img.mpi-dyn.o: ett.h geo.h lanceur.h scn.h bnd.h cmr.h lanceur_jouet.h
