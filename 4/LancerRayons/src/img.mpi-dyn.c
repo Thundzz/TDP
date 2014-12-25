@@ -22,6 +22,7 @@
 #include "type.h"
 #include "type_spec.h"
 #include "lanceur.h"
+#include "lanceur_jouet.h"
 #include "scn.h"
 #include "bnd.h"
 #include "cmr.h"
@@ -44,13 +45,6 @@ typedef struct {
 } IMG_BASIC;
 
 /* Parametres pour la version jouet */
-typedef enum Distribution{
-  UNIFORM, UNLUCKY
-}Distribution;
-Distribution __dist = UNIFORM;
-int __unlucky_proc = 0;
-int __numtasks = 10000;
-int __time = 1000;
 int * __tasktime;
 
 static IMG_BASIC  Img;
@@ -126,6 +120,8 @@ void process_task(long tile_number){
 
 /* Une fonction qui s'occupe de la tuile de numéro tile_number */
 void process_task_fake(long tile_number){
+  int myrank;
+  MPI_Comm_rank( MPI_COMM_WORLD, &myrank );
   usleep(__tasktime[tile_number]);
 }
 
@@ -273,7 +269,7 @@ void init_tasks_fake(int myrank, int nb_processes)
   INDEX j;
   /* Nombre de carreaux */
   int nb_carreaux = __numtasks;
-  __tasktime = malloc(nb_carreaux*sizeof(int));
+  __tasktime = malloc(nb_carreaux*sizeof(double));
 
   /* Nombre de carreaux dont doit s'occuper chaque processus. */
   int q = (nb_carreaux + nb_processes-1)/ nb_processes; 
@@ -292,6 +288,7 @@ void init_tasks_fake(int myrank, int nb_processes)
     else
       __tasktime[tile_number] = __time;
     queue_push(tasks, tile_number);
+    MPI_Allreduce(MPI_IN_PLACE, __tasktime, nb_carreaux, MPI_INT,MPI_MAX, MPI_COMM_WORLD);
   }
 }
 
@@ -351,9 +348,9 @@ void process_scene(const char *FileNameImg, int img_size, int myrank, int nb_pro
       fprintf(timefile, "%d %g \n", nb_processes, elapsed_max);
       fclose(timefile);
     }
+    printf("\n Parallel process time : %gs\n", elapsed_max);
   }
 }
-
 
 void img (const char *FileNameImg)
 {
@@ -362,11 +359,12 @@ void img (const char *FileNameImg)
   MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
   MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
 
-  if(!strcmp(FileNameImg, "jouet"))
+  if(FileNameImg == NULL)
   {
     init_tasks_fake(myrank, nb_processes);
     core_func = process_task_fake;
     process_scene(FileNameImg, 0, myrank, nb_processes);
+    free(__tasktime);
   }
   else
   {

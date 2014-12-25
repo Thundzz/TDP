@@ -37,6 +37,8 @@ CFLAGS = -g -Wall
 LDLIBS = -lm
 
 # application : fichier executable
+#LANCEUR_OBJ = lanceur.o
+LANCEUR_OBJ = lanceur_jouet.o
 BIN = lanceur
 
 # tests de modules locaux.
@@ -121,7 +123,7 @@ install: all
 uninstall:
 	cd $(BIN_DIR) ;	$(RM) $(BIN)
 
-lanceur: lanceur.o queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
+lanceur: $(LANCEUR_OBJ) queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 test_queue.out: test_queue.c queue.o
@@ -138,6 +140,7 @@ lanceur.o: getarg.h
 lanceur.o: ../include/exit-if.h ../include/const.h ../include/macro.h
 lanceur.o: ../include/type.h lanceur.h read_file.h bnd.h
 lanceur.o: ../include/type_spec.h ett.h geo.h scn.h img.h
+lanceur.o: lanceur_jouet.h
 bnd.basic.o: ../include/macro.h
 bnd.basic.o: ../include/exit-if.h ../include/const.h
 bnd.basic.o: ../include/type.h ../include/type_spec.h ett.h geo.h class.h
