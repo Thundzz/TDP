@@ -39,7 +39,7 @@ LDLIBS = -lm
 # application : fichier executable
 LANCEUR_OBJ = lanceur.o
 LANCEUR_JOUET_OBJ = lanceur_jouet.o
-BIN = lanceur lanceur_jouet
+BIN = lanceur lanceur_jouet lanceur_static
 
 # tests de modules locaux.
 TEST= test_queue.out
@@ -63,7 +63,7 @@ HDR_CAMERA = cmr.h
 
 #pour changer de type de lancer de rayons, mettre le bon .c
 #SRC_IMAGE = img.basic.c
-#SRC_IMAGE = img.mpi-static.c
+SRC_IMAGE_STATIC = img.mpi-static.c
 #SRC_IMAGE = img.mpi-thread.c
 SRC_IMAGE = img.mpi-dyn.c
 HDR_IMAGE = $(SRC_IMAGE:.c=.h)
@@ -124,6 +124,9 @@ uninstall:
 	cd $(BIN_DIR) ;	$(RM) $(BIN)
 
 lanceur_jouet: $(LANCEUR_JOUET_OBJ) queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+lanceur_static: $(LANCEUR_OBJ) queue.o $(OBJ) $(SRC_IMAGE_STATIC:.c=.o)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 lanceur: $(LANCEUR_OBJ) queue.o $(OBJ) $(SRC_IMAGE:.c=.o)
