@@ -1,7 +1,9 @@
 #include "util.h"
 #include "cblas.h"
-#include "assert.h"
 #include "mylapack.h"
+
+#include <assert.h>
+
 
 #define MATSIZE 6
 #define ROWSIZE 3
@@ -14,11 +16,17 @@ static int test_failed= 0;
 
 int test_dscal()
 {
-	double * A = alloc(MATSIZE, MATSIZE);
-	MATRIX_init_test(MATSIZE, MATSIZE, A, MATSIZE);
-	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
-	cblas_dscal(MATSIZE, 3, A, 1);
-	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	int alpha = 3;
+	double * A = alloc(MATSIZE, 1);
+	double * B = alloc(MATSIZE, 1);
+	MATRIX_init_test(MATSIZE, 1, A, 1);
+	MATRIX_init_test(MATSIZE, 1, B, 1);
+	cblas_dscal(MATSIZE, alpha, A, 1);
+	for (int i = 0; i < MATSIZE; ++i)
+	{
+		assert((alpha*B[i]) == A[i]);		
+	}
+
 	test_passed ++;
 	return 0;
 }
@@ -32,20 +40,31 @@ int test_dgetf2_square()
 	MATRIX_init_lower(MATSIZE, L, MATSIZE);
 	MATRIX_init_upper(MATSIZE, U, MATSIZE);
 
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, U, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, L, MATSIZE, stdout);
-
+#endif
 	cblas_dgemm_scalaire(MATSIZE, MATSIZE, MATSIZE,1.0,
 							  L, MATSIZE,
 				 			  U, MATSIZE,
                  			  A, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
-	
+#endif
 	LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+#endif
+	for (int i = 0; i < MATSIZE; ++i)
+	{
+		for (int j = 0; j < MATSIZE; ++j)
+		{
+			if(j>=i)
+				assert(A[i+j*MATSIZE] == U[i+j*MATSIZE]);
+			else
+				assert(A[i+j*MATSIZE] == L[i+j*MATSIZE]);
+		}
+	}
 	test_passed ++;
 	return 0;
 }
@@ -58,20 +77,33 @@ int test_dgetf2_general()
 
 	MATRIX_init_lower(MATSIZE, L, MATSIZE);
 	MATRIX_init_upper(MATSIZE, U, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, U, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, L, MATSIZE, stdout);
-
+#endif
 	cblas_dgemm_scalaire(MATSIZE, MATSIZE, MATSIZE,1.0,
 							  L, MATSIZE,
 				 			  U, MATSIZE,
                  			  A, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
-	
+#endif
 	LAPACKE_dgetf2(0, COLSIZE, ROWSIZE , A, MATSIZE, NULL );
 
+#ifdef VERBOSE
 	MATRIX_affiche(COLSIZE, ROWSIZE, A, MATSIZE, stdout);
+#endif
+
+	for (int i = 0; i < COLSIZE; ++i)
+	{
+		for (int j = 0; j < ROWSIZE; ++j)
+		{
+			if(j>=i)
+				assert(A[i+j*MATSIZE] == U[i+j*MATSIZE]);
+			else
+				assert(A[i+j*MATSIZE] == L[i+j*MATSIZE]);
+		}
+	}
 	test_passed ++;
 	return 0;
 }
@@ -85,26 +117,29 @@ int test_dtrsm(){
 	MATRIX_init_id(MATSIZE, MATSIZE, A, MATSIZE);
 	MATRIX_init_id(MATSIZE, 1, B, MATSIZE);
 
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, B, MATSIZE, stdout);
-
+#endif
 	LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
-	
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
-
+#endif
 	LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT, MATSIZE, MATSIZE,
  				1.0, A, MATSIZE, B, MATSIZE);
 	LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, MATSIZE, MATSIZE,
   				1.0, A, MATSIZE, B, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, 1, B, MATSIZE, stdout);
-
+#endif
 	cblas_dgemm_scalaire(MATSIZE, MATSIZE, MATSIZE,1.0,
 							  A, MATSIZE,
 				 			  B, MATSIZE,
                  			  C, MATSIZE);
-
-	MATRIX_affiche(MATSIZE, 1, C, MATSIZE, stdout);
+	for (int i = 0; i < MATSIZE; ++i)
+	{
+		assert((B[i]) == C[i]);	
+	}
 	test_passed ++;
 	return 0;
 }
@@ -118,15 +153,18 @@ int test_example()
 	MATRIX_init_example_A(MATSIZE, MATSIZE, A, MATSIZE);
 	MATRIX_init_example_b(MATSIZE,1, b, 1);
 	MATRIX_init_example_x(MATSIZE,1, x, 1);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
-
+#endif
 
 	LAPACKE_dgesv( MATSIZE, 1,  A,  MATSIZE , NULL, b, 1);
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, x, MATSIZE, stdout);
+#endif	
 
+	test_passed ++;
 	return 0;
 }
 
@@ -139,19 +177,29 @@ int test_example_multiple()
 	MATRIX_init_example_A(MATSIZE, MATSIZE, A, MATSIZE);
 	MATRIX_init_example_b(MATSIZE, MATSIZE, b, MATSIZE);
 	MATRIX_init_example_x(MATSIZE, MATSIZE, x, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, b, MATSIZE, stdout);
-
+#endif
 	LAPACKE_dgesv( MATSIZE, MATSIZE,  A,  MATSIZE , NULL, b, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, b, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, x, MATSIZE, stdout);
+#endif
 
+	for (int i = 0; i < MATSIZE; ++i)
+	{
+		for (int j = 0; j < MATSIZE; ++j)
+		{
+				assert(b[i+j*MATSIZE] == x[i+j*MATSIZE]);
+		}
+	}
+
+	test_passed ++;
 	return 0;	
  }
 
- int test_dgetrf_general()
+ int test_dgetrf()
 {
 	double * L = alloc(MATSIZE, MATSIZE);
 	double * U = alloc(MATSIZE, MATSIZE);
@@ -159,34 +207,48 @@ int test_example_multiple()
 
 	MATRIX_init_lower(MATSIZE, L, MATSIZE);
 	MATRIX_init_upper(MATSIZE, U, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, U, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, L, MATSIZE, stdout);
-
+#endif
 	cblas_dgemm_scalaire(MATSIZE, MATSIZE, MATSIZE,1.0,
 							  L, MATSIZE,
 				 			  U, MATSIZE,
                  			  A, MATSIZE);
-
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
-	
+#endif
 	LAPACKE_dgetrf(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
 
+#ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+#endif
+
+	for (int i = 0; i < COLSIZE; ++i)
+	{
+		for (int j = 0; j < ROWSIZE; ++j)
+		{
+			if(j>=i)
+				assert(A[i+j*MATSIZE] == U[i+j*MATSIZE]);
+			else
+				assert(A[i+j*MATSIZE] == L[i+j*MATSIZE]);
+		}
+	}
 	test_passed ++;
 	return 0;
 }
 
 int main(void)
 {
-	//test_dscal();
-	//test_dgetf2_square();
-	//test_dgetf2_general();
-	//test_dtrsm();
-	//test_example();
-	//test_example_multiple();
-	test_dgetrf_general();
-	printf("%d tests run. (%d Passed, %d Failed)\n", test_total,
-	 test_passed, test_failed);
+	test_dscal();
+	test_dgetf2_square();
+	test_dgetf2_general();
+	test_dtrsm();
+	test_example();
+	test_example_multiple();
+	test_dgetrf();
+
+	test_total = test_passed + test_failed;
+	printf(ANSI_COLOR_GREEN"%d tests run and passed.\n"ANSI_COLOR_RESET, test_passed);
 	return 0;
 }

@@ -46,8 +46,6 @@ int LAPACKE_dgetf2( int matrix_order, int m, int n,
 int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  double alpha, double * A, int lda, double *B, int ldb)
  {
- 	UNUSED(ldb);
- 	UNUSED(n);
  	assert(alpha == 1.0);
  	if(uplo == LAPACKE_LOWER)
  	{
@@ -83,15 +81,13 @@ int LAPACKE_dgesv(int  N,int NRHS, double * A, int LDA, int * IPIV, double *B, i
 	/* Factorisation LU de A */
 	LAPACKE_dgetf2( 0 , N , N , A , LDA, NULL );
 	/* Résolution des systèmes d'équations linéaires */
-	for (int i = 0; i < NRHS ; ++i)
-	{	
-		/* résolution Ly = b */
-		LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT , N, N, 1.0, A, LDA, B+ i*LDB, LDB);
 
-		/* Résolution Ux = y */
-		LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, N, N, 1.0, A, LDA, B+ i*LDB, LDB);
+	/* résolution Ly = b */
+	LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT , N, NRHS, 1.0, A, LDA, B, LDB);
 
-	}
+	/* Résolution Ux = y */
+	LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, N, N, 1.0, A, LDA, B, LDB);
+
 	return 0;
 }
 
