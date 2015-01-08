@@ -1,7 +1,7 @@
-CC=gcc
+CC=mpicc
 CFLAGS= -W -Wall -O2 -std=c99 
 LDFLAGS= -W -Wall -O2 -pthread
-EXEC= 
+EXEC= lu_mpi.out
 TESTS= driver.out 
 
 # Uncomment for verbose tests.
