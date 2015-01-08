@@ -157,8 +157,8 @@ int main(void)
 	//test_dgetf2_square();
 	//test_dgetf2_general();
 	//test_dtrsm();
-	test_example();
-	//test_example_multiple();
+	//test_example();
+	test_example_multiple();
 	printf("%d tests run. (%d Passed, %d Failed)\n", test_total,
 	 test_passed, test_failed);
 	return 0;
