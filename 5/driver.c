@@ -109,12 +109,63 @@ int test_dtrsm(){
 	return 0;
 }
 
+int test_example()
+{
+	double * A = alloc(MATSIZE, MATSIZE);
+	double * b = alloc(MATSIZE, 1);
+	double * x = alloc(MATSIZE, 1);	
+
+	MATRIX_init_example_A(MATSIZE, MATSIZE, A, MATSIZE);
+	MATRIX_init_example_b(1, MATSIZE, b, 1);
+	MATRIX_init_example_x(1, MATSIZE, x, 1);
+
+	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
+
+	LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
+	LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT, MATSIZE, MATSIZE,
+ 				1.0, A, MATSIZE, b, 1);
+	LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, MATSIZE, MATSIZE,
+  				1.0, A, MATSIZE, b, 1);
+
+	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, 1, x, MATSIZE, stdout);
+
+	return 0;
+}
+
+int test_example_multiple()
+ {
+ 	double * A = alloc(MATSIZE, MATSIZE);
+	double * b = alloc(MATSIZE, MATSIZE);
+	double * x = alloc(MATSIZE, MATSIZE);	
+
+	MATRIX_init_example_A(MATSIZE, MATSIZE, A, MATSIZE);
+	MATRIX_init_example_b(MATSIZE, MATSIZE, b, MATSIZE);
+	MATRIX_init_example_x(MATSIZE, MATSIZE, x, MATSIZE);
+
+	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, MATSIZE, b, MATSIZE, stdout);
+
+	// LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
+	// LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT, MATSIZE, MATSIZE,
+ // 				1.0, A, MATSIZE, b, 1);
+	// LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, MATSIZE, MATSIZE,
+ //  				1.0, A, MATSIZE, b, 1);
+
+	// MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, MATSIZE, x, MATSIZE, stdout);
+
+	return 0;	
+ }
+
 int main(void)
 {
 	//test_dscal();
 	//test_dgetf2_square();
 	//test_dgetf2_general();
-	test_dtrsm();
+	//test_dtrsm();
+	test_example_multiple();
 	printf("%d tests run. (%d Passed, %d Failed)\n", test_total,
 	 test_passed, test_failed);
 	return 0;

@@ -84,6 +84,39 @@ void MATRIX_init_upper(int m, double* a, int lda){
   }
 }
 
+void MATRIX_init_example_A(int m, int n, double* a, int lda){
+  int i, j;
+  for(i= 0; i< m; i++){
+    for(j=0; j < n; j++){
+        if(j == 0)
+          a[j*lda + i] = 1;
+        else if(i+1 == j)
+          a[j*lda + i] = j;
+        else
+          a[j*lda + i] = 0;
+    }
+  }  
+}
+
+void MATRIX_init_example_b(int m, int n, double* a, int lda){
+  int i, j;
+  for(i=0; i < m; i++){
+    for(j=0; j < n; j++){
+      a[j*lda + i] = 1+(j+1)%n;
+    }
+  } 
+}
+
+void MATRIX_init_example_x(int m, int n, double* a, int lda){
+  int i, j;
+  for(i=0; i < m; i++){
+    for(j=0; j < n; j++){
+      a[j*lda + i] = 1;
+    }
+  } 
+}
+
+
 void MATRIX_affiche(int m, int n, double * a, int lda, FILE* flux)
 {
   int i, j; 
