@@ -116,8 +116,8 @@ int test_example()
 	double * x = alloc(MATSIZE, 1);	
 
 	MATRIX_init_example_A(MATSIZE, MATSIZE, A, MATSIZE);
-	MATRIX_init_example_b(1, MATSIZE, b, 1);
-	MATRIX_init_example_x(1, MATSIZE, x, 1);
+	MATRIX_init_example_b(MATSIZE,1, b, 1);
+	MATRIX_init_example_x(MATSIZE,1, x, 1);
 
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
