@@ -5,11 +5,13 @@
 #include <assert.h>
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
-
+#define UNUSED(x) (void)(x)
 
 int LAPACKE_dgetf2( int matrix_order, int m, int n,
 	double* a, int lda, int* ipiv )
 {
+	UNUSED(ipiv);
+	UNUSED(matrix_order);
 	int colr, linr;
 	double ajj;
 	for (int j = 0; j < MIN(m, n); ++j)
@@ -32,11 +34,13 @@ int LAPACKE_dgetf2( int matrix_order, int m, int n,
 int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  double alpha, double * A, int lda, double *B, int ldb)
  {
+ 	UNUSED(ldb);
+ 	UNUSED(n);
  	assert(alpha == 1.0);
  	if(uplo == LAPACKE_LOWER)
  	{
  		assert(diag == LAPACKE_UNIT);
- 		int i,j;
+ 		int i;
  		for(i = 0; i<m; i++){
  			B[i] -= cblas_ddot(i, &A[i], lda, B, 1);
  		}
@@ -45,12 +49,13 @@ int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  	else
  	{
  		assert(diag == LAPACKE_NUNIT);
- 		int i,j;
+ 		int i;
  		/* TODO : Remontée! */
  		for(i = m-1; i >= 0 ; i--){
  			double aii = A[i*lda +i];
  			B[i] -= cblas_ddot(m-1-i, &A[i + (i+1)*lda], lda, &B[i+1], 1);
  			B[i] /= aii;
  		}
- 	}	
+ 	}
+ 	return 0;
  }

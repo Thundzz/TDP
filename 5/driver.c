@@ -19,6 +19,8 @@ int test_dscal()
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	cblas_dscal(MATSIZE, 3, A, 1);
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	test_passed ++;
+	return 0;
 }
 
 int test_dgetf2_square()
@@ -41,9 +43,10 @@ int test_dgetf2_square()
 
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	
-	LAPACKE_dgetf2(NULL, MATSIZE, MATSIZE , A, MATSIZE, NULL );
+	LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
 
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	test_passed ++;
 	return 0;
 }
 
@@ -66,9 +69,10 @@ int test_dgetf2_general()
 
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	
-	LAPACKE_dgetf2(NULL, COLSIZE, ROWSIZE , A, MATSIZE, NULL );
+	LAPACKE_dgetf2(0, COLSIZE, ROWSIZE , A, MATSIZE, NULL );
 
 	MATRIX_affiche(COLSIZE, ROWSIZE, A, MATSIZE, stdout);
+	test_passed ++;
 	return 0;
 }
 
@@ -84,7 +88,7 @@ int test_dtrsm(){
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, B, MATSIZE, stdout);
 
-	LAPACKE_dgetf2(NULL, MATSIZE, MATSIZE , A, MATSIZE, NULL );
+	LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
 	
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 
@@ -101,6 +105,8 @@ int test_dtrsm(){
                  			  C, MATSIZE);
 
 	MATRIX_affiche(MATSIZE, 1, C, MATSIZE, stdout);
+	test_passed ++;
+	return 0;
 }
 
 int main(void)

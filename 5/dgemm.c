@@ -4,6 +4,8 @@
 #include "cblas.h"
 #include "util.h"
 
+
+#define UNUSED(x) (void)(x)
 #define BLOCK_SIZE 40
 
 /*A[i][j] === j*lda + i*/
@@ -142,6 +144,7 @@ void cblas_dgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA
                  const int lda, const double *B, const int ldb,
                  const double beta, double *C, const int ldc)
 {
+	UNUSED(beta);
 	if (Order == CblasRowMajor)
 	{
 		fprintf(stderr, "CblasRowMajor not supported. Reorder your matrices and use CblasColMajor instead\n");
@@ -276,6 +279,7 @@ void cblas_pthread(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE Tran
                  const int lda, const double *B, const int ldb,
                  const double beta, double *C, const int ldc)
 {
+	UNUSED(beta);
 	if (Order == CblasRowMajor)
 	{
 		fprintf(stderr, "CblasRowMajor not supported. Reorder your matrices and use CblasColMajor instead\n");
