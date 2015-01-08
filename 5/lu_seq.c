@@ -53,8 +53,11 @@ int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  	{
  		assert(diag == LAPACKE_UNIT);
  		int i;
- 		for(i = 0; i<m; i++){
- 			B[i] -= cblas_ddot(i, &A[i], lda, B, 1);
+ 		for (int j = 0; j < n; ++j)
+ 		{
+	 		for(i = 0; i<m; i++){
+ 				B[i+j*ldb] -= cblas_ddot(i, &A[i], lda, B+ j*ldb, 1);
+	 		}
  		}
  	}
 
@@ -62,10 +65,13 @@ int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  	{
  		assert(diag == LAPACKE_NUNIT);
  		int i;
- 		for(i = m-1; i >= 0 ; i--){
- 			double aii = A[i*lda +i];
- 			B[i] -= cblas_ddot(m-1-i, &A[i + (i+1)*lda], lda, &B[i+1], 1);
- 			B[i] /= aii;
+ 		for (int j = 0; j < n; ++j)
+ 		{
+	 		for(i = m-1; i >= 0 ; i--){
+	 			double aii = A[i*lda +i];
+	 			B[i+j*ldb] -= cblas_ddot(m-1-i, &A[i + (i+1)*lda], lda, &B[i+1 +j*ldb], 1);
+	 			B[i+j*ldb] /= aii;
+	 		}
  		}
  	}
  	return 0;
@@ -89,7 +95,7 @@ int LAPACKE_dgesv(int  N,int NRHS, double * A, int LDA, int * IPIV, double *B, i
 	return 0;
 }
 
-#define BSZ 1
+#define BSZ 2
 
 int LAPACKE_dgetrf( int matrix_order, int m, int n,
 	double* a, int lda, int* ipiv )
@@ -101,12 +107,11 @@ int LAPACKE_dgetrf( int matrix_order, int m, int n,
 	{
 		int cur_bs = MIN(BSZ, MIN(m,n) - i);
 
-		LAPACKE_dgetf2( 0 , m-i, cur_bs, a+i*lda+i, lda, NULL);
+		LAPACKE_dgetf2( 0 ,m-i, cur_bs, a+i*lda+i, lda, NULL);
 		
-		if(i + cur_bs < n){
-			//LAPACKE_dgesv(cur_bs , m-i -cur_bs,  a + j*lda + i, lda,  NULL, a+j*lda+ i+BSZ, lda);
+		if(i + cur_bs <= n){
 			LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  cur_bs, n- i - cur_bs , 1,  a + i*lda + i,  lda, a+(i+cur_bs)*lda+ i, lda);
-			if(i+cur_bs < m ){
+			if(i+cur_bs <= m ){
 				double * hor = a + i + (i+cur_bs)*lda ;
 				double * ver = a + (i+cur_bs) +i*lda;
 				double * c   = a + (i+cur_bs) + (i+cur_bs)*lda;
