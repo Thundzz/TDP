@@ -102,7 +102,7 @@ void MATRIX_init_example_b(int m, int n, double* a, int lda){
   int i, j;
   for(i=0; i < m; i++){
     for(j=0; j < n; j++){
-      a[j*lda + i] = 1+(j+1)%n;
+      a[j*lda + i] = 1+(i+1)%m;
     }
   } 
 }
