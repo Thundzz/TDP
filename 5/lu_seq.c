@@ -50,7 +50,6 @@ int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  	{
  		assert(diag == LAPACKE_NUNIT);
  		int i;
- 		/* TODO : Remontée! */
  		for(i = m-1; i >= 0 ; i--){
  			double aii = A[i*lda +i];
  			B[i] -= cblas_ddot(m-1-i, &A[i + (i+1)*lda], lda, &B[i+1], 1);
@@ -59,3 +58,21 @@ int LAPACKE_dtrsm(int uplo,int diag, int m, int n,
  	}
  	return 0;
  }
+
+int LAPACKE_dgesv(int  N,int NRHS, double * A, int LDA, int * IPIV, double *B, int LDB)
+{
+	UNUSED(IPIV);
+	/* Factorisation LU de A */
+	LAPACKE_dgetf2( 0 , N , N , A , LDA, NULL );
+	/* Résolution des systèmes d'équations linéaires */
+	for (int i = 0; i < NRHS ; ++i)
+	{	
+		/* résolution Ly = b */
+		LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT , N, N, 1.0, A, LDA, B+ i*LDB, LDB);
+
+		/* Résolution Ux = y */
+		LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, N, N, 1.0, A, LDA, B+ i*LDB, LDB);
+
+	}
+	return 0;
+}
