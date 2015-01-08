@@ -22,4 +22,6 @@ int LAPACKE_dtrsm(int UPLO,int DIAG, int M, int N,
 
 int LAPACKE_dgesv(int  N,int NRHS, double * A, int LDA, int * IPIV, double *B, int LDB);
 
+int LAPACKE_dgetrf( int matrix_order, int m, int n, double* a, int lda, int* ipiv );
+
 #endif

@@ -4,7 +4,19 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
+
+
+#define MAX(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
+#define MIN(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
+
+
 #define UNUSED(x) (void)(x)
 
 int LAPACKE_dgetf2( int matrix_order, int m, int n,
@@ -73,6 +85,34 @@ int LAPACKE_dgesv(int  N,int NRHS, double * A, int LDA, int * IPIV, double *B, i
 		/* Résolution Ux = y */
 		LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, N, N, 1.0, A, LDA, B+ i*LDB, LDB);
 
+	}
+	return 0;
+}
+
+#define BSZ 1
+
+int LAPACKE_dgetrf( int matrix_order, int m, int n,
+	double* a, int lda, int* ipiv )
+{
+	assert(m==n);
+	UNUSED(ipiv);
+	UNUSED(matrix_order);
+	for (int i = 0; i < MIN(m, n); i += BSZ)
+	{
+		int cur_bs = MIN(BSZ, MIN(m,n) - i);
+
+		LAPACKE_dgetf2( 0 , m-i, cur_bs, a+i*lda+i, lda, NULL);
+		
+		if(i + cur_bs < n){
+			//LAPACKE_dgesv(cur_bs , m-i -cur_bs,  a + j*lda + i, lda,  NULL, a+j*lda+ i+BSZ, lda);
+			LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  cur_bs, n- i - cur_bs , 1,  a + i*lda + i,  lda, a+(i+cur_bs)*lda+ i, lda);
+			if(i+cur_bs < m ){
+				double * hor = a + i + (i+cur_bs)*lda ;
+				double * ver = a + (i+cur_bs) +i*lda;
+				double * c   = a + (i+cur_bs) + (i+cur_bs)*lda;
+				cblas_dgemm_scalaire(n-i -cur_bs, cur_bs, m-i -cur_bs, -1.0, ver, lda, hor, lda, c , lda);
+			}
+		}
 	}
 	return 0;
 }

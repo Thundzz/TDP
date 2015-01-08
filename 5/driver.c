@@ -151,6 +151,32 @@ int test_example_multiple()
 	return 0;	
  }
 
+ int test_dgetrf_general()
+{
+	double * L = alloc(MATSIZE, MATSIZE);
+	double * U = alloc(MATSIZE, MATSIZE);
+	double * A = alloc(MATSIZE, MATSIZE);
+
+	MATRIX_init_lower(MATSIZE, L, MATSIZE);
+	MATRIX_init_upper(MATSIZE, U, MATSIZE);
+
+	MATRIX_affiche(MATSIZE, MATSIZE, U, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, MATSIZE, L, MATSIZE, stdout);
+
+	cblas_dgemm_scalaire(MATSIZE, MATSIZE, MATSIZE,1.0,
+							  L, MATSIZE,
+				 			  U, MATSIZE,
+                 			  A, MATSIZE);
+
+	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	
+	LAPACKE_dgetrf(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
+
+	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
+	test_passed ++;
+	return 0;
+}
+
 int main(void)
 {
 	//test_dscal();
@@ -158,7 +184,8 @@ int main(void)
 	//test_dgetf2_general();
 	//test_dtrsm();
 	//test_example();
-	test_example_multiple();
+	//test_example_multiple();
+	test_dgetrf_general();
 	printf("%d tests run. (%d Passed, %d Failed)\n", test_total,
 	 test_passed, test_failed);
 	return 0;
