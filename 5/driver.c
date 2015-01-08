@@ -122,12 +122,8 @@ int test_example()
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
 
-	LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
-	LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT, MATSIZE, MATSIZE,
- 				1.0, A, MATSIZE, b, 1);
-	LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, MATSIZE, MATSIZE,
-  				1.0, A, MATSIZE, b, 1);
 
+	LAPACKE_dgesv( MATSIZE, 1,  A,  MATSIZE , NULL, b, 1);
 	MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, x, MATSIZE, stdout);
 
@@ -147,13 +143,9 @@ int test_example_multiple()
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, b, MATSIZE, stdout);
 
-	// LAPACKE_dgetf2(0, MATSIZE, MATSIZE , A, MATSIZE, NULL );
-	// LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT, MATSIZE, MATSIZE,
- // 				1.0, A, MATSIZE, b, 1);
-	// LAPACKE_dtrsm(LAPACKE_UPPER, LAPACKE_NUNIT, MATSIZE, MATSIZE,
- //  				1.0, A, MATSIZE, b, 1);
+	LAPACKE_dgesv( MATSIZE, MATSIZE,  A,  MATSIZE , NULL, b, MATSIZE);
 
-	// MATRIX_affiche(MATSIZE, 1, b, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, MATSIZE, b, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, MATSIZE, x, MATSIZE, stdout);
 
 	return 0;	
@@ -165,7 +157,8 @@ int main(void)
 	//test_dgetf2_square();
 	//test_dgetf2_general();
 	//test_dtrsm();
-	test_example_multiple();
+	test_example();
+	//test_example_multiple();
 	printf("%d tests run. (%d Passed, %d Failed)\n", test_total,
 	 test_passed, test_failed);
 	return 0;
