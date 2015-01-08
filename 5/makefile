@@ -4,6 +4,10 @@ LDFLAGS= -W -Wall -O2 -pthread
 EXEC= 
 TESTS= driver.out 
 
+# Uncomment for verbose tests.
+VERB = #-DVERBOSE
+
+
 LIB=dscal.o dgemm.o dger.o util.o lu_seq.o ddot.o
 
 all: $(EXEC) $(BENCH) $(TESTS)
@@ -12,7 +16,7 @@ all: $(EXEC) $(BENCH) $(TESTS)
 	$(CC)  -o $@ $(LIB) $< $(LDFLAGS)
 
 %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS) $(VERB)
 	
 clean:
 	rm -rf *.o  *.[oe][0-9]* *~ *# *.out
