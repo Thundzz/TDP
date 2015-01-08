@@ -25,6 +25,12 @@ void MATRIX_init_id(int m, int n, double * a, int lda);
 
 void MATRIX_init_zero(int m, int n, double * a, int lda);
 
+void MATRIX_init_example_A(int m, int n, double* a, int lda);
+
+void MATRIX_init_example_b(int m, int n, double* a, int lda);
+
+void MATRIX_init_example_x(int m, int n, double* a, int lda);
+
 void MATRIX_affiche(int m, int n, double * a, int lda, FILE* flux);
 
 #endif
