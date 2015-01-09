@@ -1,8 +1,8 @@
 CC=mpicc
 CFLAGS= -W -Wall -O2 -std=c99 
 LDFLAGS= -W -Wall -O2 -pthread
-EXEC= lu_mpi.out
-TESTS= driver.out 
+EXEC=
+TESTS= driver.out driver_mpi.out
 
 # Uncomment for verbose tests.
 VERB = #-DVERBOSE

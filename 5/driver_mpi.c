@@ -2,6 +2,7 @@
 #include "mylapack.h"
 #include "util.h"
 #include "mpi.h"
+#include "driver_mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
