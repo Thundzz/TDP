@@ -6,10 +6,11 @@ EXEC= life_seq.out life_omp.out life_pthread.out
 TESTS= 
 LIB=
 
-send:
-	scp * formation:TDP5
 
 all: $(EXEC) $(BENCH) $(TESTS)
+
+send:
+	scp * formation:TDP5
 
 %.out: %.o $(LIB)
 	$(CC)  -o $@ $(LIB) $< $(LDFLAGS) $(OUTPUT)
