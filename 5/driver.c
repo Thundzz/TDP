@@ -134,14 +134,17 @@ int test_dgetrf_piv()
 {
 	int size = 9;
 	double A[] =  {7, -6, -11, 3, 7, 2, -11, 10, -2 };
+	double B[] =  {7, -6, -11, 3, 7, 2, -11, 10, -2 };
 	double res[] = {-11, 0.545455, -0.636364, 2, 5.90909, 0.723077, -2, 11.0909,  -20.2923};
 	int piv[3] = {0}; 
 #ifdef VERBOSE
 	MATRIX_affiche(3, 3, A, 3, stdout);
 #endif
+	LAPACKE_dgetf2(0, 3, 3 , B, 3, NULL );
 	LAPACKE_dgetrf_piv(0, 3, 3 , A, 3, piv );
 #ifdef VERBOSE
 	MATRIX_affiche(3, 3, A, 3, stdout);
+	MATRIX_affiche(3, 3, B, 3, stdout);
 #endif
 	for (int i = 0; i < size; ++i)
 	{

@@ -60,7 +60,7 @@ void swap_between(int M, double *A, int lda, int st, int end, int * ipiv)
 	{
 		if(st != ipiv[i])
 		{
-			swap_rows(M, A + i*lda, A + ipiv[i]*lda, lda);
+			swap_rows(M, A + i, A + ipiv[i], lda);
 		}
 	}
 }
@@ -188,7 +188,6 @@ int LAPACKE_dgetrf_piv( int matrix_order, int m, int n,
 	double* a, int lda, int* ipiv )
 {
 	assert(m==n);
-	UNUSED(ipiv);
 	UNUSED(matrix_order);
 	for (int i = 0; i < MIN(m, n); i += BSZ)
 	{
@@ -197,11 +196,11 @@ int LAPACKE_dgetrf_piv( int matrix_order, int m, int n,
 		int lim = MIN(m, i+cur_bs);
 		for (int j = i; j <lim ; ++j)
 		{
-			ipiv[i] = i+ ipiv[j];
-		}		
-		swap_between(i, a, lda, i, i+cur_bs, ipiv);
+			ipiv[j] = i+ ipiv[j];
+		}
+		//swap_between(i, a, lda, i, i+cur_bs, ipiv);
 		if(i + cur_bs <= n){
-			swap_between(n-i-cur_bs, a+(i+cur_bs)*lda, lda, i, i+cur_bs, ipiv);
+			swap_between(n-i-cur_bs, a+(i+cur_bs)*lda, lda, i, i+cur_bs , ipiv);
 			LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  cur_bs,
 						  n- i - cur_bs , 1,  a + i*lda + i,
 						  lda, a+(i+cur_bs)*lda+ i, lda);
