@@ -57,9 +57,9 @@ void lu_mpi_process(int myrank, int nb_processes,
 		}
 		MPI_Bcast(LU_tmp, mb*nb, MPI_DOUBLE, LU_from, MPI_COMM_WORLD);
 		
-		for (int k = 0; k < proc_num_cols; ++k)
+		for (int k = 0; k < proc_num_cols && i <nb_cols; ++k)
 		{
-			if(col_ids[k] > i && i < nb_cols-1)
+			if(col_ids[k] > i)
 			{
 				LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  LU_tmp,  mb, &cols[k][nb*i], mb);
 				

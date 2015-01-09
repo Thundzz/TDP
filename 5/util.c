@@ -28,13 +28,13 @@ void MATRIX_init_rand(int m, int n, double * a, int lda)
   }
 }
 
-//Remplit une matrice A de taille MxN par les nombres de 0 à MxN
+//Remplit une matrice A de taille MxN par les nombres de 1 à MxN+1
 void MATRIX_init_test(int m, int n, double * a, int lda)
 {
   int i, j;
   for(i= 0; i< m; i++){ 
     for(j=0; j <n; j++){
-      a[j*lda + i] = i +j*m;
+      a[j*lda + i] = i +j*m+1;
     }
   }
 }
@@ -129,4 +129,14 @@ void MATRIX_affiche(int m, int n, double * a, int lda, FILE* flux)
     fprintf(flux, "\n");
   }
   fprintf(flux, "\n");
+}
+
+void MATRIX_copie(double* c, int m, int n, double * a, int lda)
+{
+  int i, j;
+  for(i=0; i < m; i++){
+    for(j=0; j < n; j++){
+      c[j*lda + i] = a[j*lda +i];
+    }
+  } 
 }
