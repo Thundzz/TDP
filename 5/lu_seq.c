@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <math.h>
 
-#define BSZ 1
+#define BSZ 2
 
 #define MAX(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -152,15 +152,12 @@ int LAPACKE_dgetrf( int matrix_order, int m, int n,
 		LAPACKE_dgetf2( 0 ,m-i, cur_bs, a+i*lda+i, lda, NULL);
 		
 		if(i + cur_bs <= n){
-			LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  cur_bs,
-						  n- i - cur_bs , 1,  a + i*lda + i,
-						  lda, a+(i+cur_bs)*lda+ i, lda);
+			LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  cur_bs, n- i - cur_bs , 1,  a + i*lda + i,  lda, a+(i+cur_bs)*lda+ i, lda);
 			if(i+cur_bs <= m ){
 				double * hor = a + i + (i+cur_bs)*lda ;
 				double * ver = a + (i+cur_bs) +i*lda;
 				double * c   = a + (i+cur_bs) + (i+cur_bs)*lda;
-				cblas_dgemm_scalaire(n-i -cur_bs, cur_bs, m-i -cur_bs,
-									 -1.0, ver, lda, hor, lda, c , lda);
+				cblas_dgemm_scalaire(n-i -cur_bs, cur_bs, m-i -cur_bs, -1.0, ver, lda, hor, lda, c , lda);
 			}
 		}
 	}

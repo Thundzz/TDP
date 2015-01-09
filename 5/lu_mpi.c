@@ -50,30 +50,27 @@ void lu_mpi_process(int myrank, int nb_processes,
 			LU_from = i%nb_processes;
 		if(myrank == LU_from)
 		{
-			// MATRIX_affiche(nb, nb, &cols[next_col_id][nb*i], mb, stdout);
+			// MATRIX_affiche(mb-nb*i, nb, &cols[next_col_id][nb*i], mb, stdout);
 			LAPACKE_dgetrf(0, mb-nb*i, nb, &cols[next_col_id][nb*i], mb, NULL);
 			MATRIX_copie(LU_tmp, mb-nb*i, nb, &cols[next_col_id][nb*i], mb);
 			next_col_id++;
 		}
 		MPI_Bcast(LU_tmp, mb*nb, MPI_DOUBLE, LU_from, MPI_COMM_WORLD);
 		
-		if  (i < nb_cols-1)
+		for (int k = 0; k < proc_num_cols; ++k)
 		{
-			for (int k = 0; k < proc_num_cols; ++k)
+			if(col_ids[k] > i && i < nb_cols-1)
 			{
-				if(col_ids[k] > i)
-				{
-					LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  LU_tmp,  mb, &cols[k][nb*i], mb);
-					
-					// MATRIX_affiche(mb-nb*(i+1), nb, &LU_tmp[nb*(i+1)], mb, stdout);
-					// MATRIX_affiche(nb, nb, &cols[k][nb*i], mb, stdout);		
-					// MATRIX_affiche(mb-nb*(i+1), nb, &cols[k][nb*(i+1)], mb, stdout);		
+				LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  LU_tmp,  mb, &cols[k][nb*i], mb);
+				
+				// MATRIX_affiche(mb-nb*(i+1), nb, &LU_tmp[nb*(i+1)], mb, stdout);
+				// MATRIX_affiche(nb, nb, &cols[k][nb*i], mb, stdout);		
+				// MATRIX_affiche(mb-nb*(i+1), nb, &cols[k][nb*(i+1)], mb, stdout);		
 
-					cblas_dgemm_scalaire(mb-nb*(i+1), nb, nb,
-						   		-1.0, &LU_tmp[nb*(i+1)], mb,
-						   		&cols[k][nb*i], mb,
-						   		&cols[k][nb*(i+1)], mb);
-				}
+				cblas_dgemm_scalaire(mb-nb*(i+1), nb, nb,
+					   		-1.0, &LU_tmp[nb*(i+1)], mb,
+					   		&cols[k][nb*i], mb,
+					   		&cols[k][nb*(i+1)], mb);
 			}
 		}
 	}
@@ -132,7 +129,6 @@ int main()
 
 	lu_gather_columns(myrank,A, nb_cols, col_size,
 						cols, local, proc_num_cols, type_column);
-
 	if(myrank == 0)
 	{
 		MATRIX_affiche(N, N, A, N, stdout);

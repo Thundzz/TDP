@@ -22,7 +22,7 @@ int get_proc_num_cols(int myrank, int nb_cols, int nb_processes)
 	{
 		if(proc_num_cols % 2 == 0 && myrank <= r-1)
 			proc_num_cols ++;
-		else if(proc_num_cols % 2 != 0 && myrank > r)
+		else if(proc_num_cols % 2 != 0 && myrank >= r)
 			proc_num_cols ++;
 	}
 	return proc_num_cols;
@@ -65,6 +65,7 @@ void MATRIX_dispatch(int myrank, int nb_processes, double* A, int nb_cols, int c
 		{
 			MPI_Recv(cols[recvd_cols], 1, type_column, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &st);
 			cols[recvd_cols][col_size] = st.MPI_TAG;
+			local[recvd_cols] = st.MPI_TAG;
 		}
 	}
 }
@@ -96,7 +97,7 @@ void MATRIX_collect(int myrank, double* A, int nb_cols, int col_size,
 		int colnum;
 		for (int i = 0; i < proc_num_cols; ++i)
 		{
-			colnum = cols[i][col_size];
+			colnum = local[i];
 			MPI_Send(cols[i], 1, type_column, 0, colnum, MPI_COMM_WORLD);
 		}
 	}
