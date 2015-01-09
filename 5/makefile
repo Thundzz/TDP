@@ -5,7 +5,7 @@ EXEC=
 TESTS= driver.out driver_mpi.out
 
 # Uncomment for verbose tests.
-VERB = #-DVERBOSE
+VERB = -DVERBOSE
 
 
 LIB=dscal.o dgemm.o dger.o util.o lu_seq.o ddot.o comm.o

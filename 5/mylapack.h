@@ -24,4 +24,9 @@ int LAPACKE_dgesv(int  N,int NRHS, double * A, int LDA, int * IPIV, double *B, i
 
 int LAPACKE_dgetrf( int matrix_order, int m, int n, double* a, int lda, int* ipiv );
 
+int LAPACKE_dgetf2_piv( int matrix_order, int m, int n,
+	double* a, int lda, int* ipiv );
+
+int LAPACKE_dgetrf_piv( int matrix_order, int m, int n,
+	double* a, int lda, int* ipiv );
 #endif

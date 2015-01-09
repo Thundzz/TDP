@@ -3,12 +3,12 @@
 #include "mylapack.h"
 
 #include <assert.h>
-
+#include <math.h>
 
 #define MATSIZE 6
 #define ROWSIZE 3
 #define COLSIZE 4
-
+#define EPSILON 1e-5
 
 static int test_total= 0;
 static int test_passed= 0;
@@ -108,6 +108,49 @@ int test_dgetf2_general()
 	return 0;
 }
 
+int test_dgetf2_piv()
+{
+	int size = 9;
+	double A[] =  {7, -6, -11, 3, 7, 2, -11, 10, -2 };
+	double res[] = {-11, 0.545455, -0.636364, 2, 5.90909, 0.723077, -2, 11.0909,  -20.2923};
+	int piv[3] = {0}; 
+#ifdef VERBOSE
+	MATRIX_affiche(3, 3, A, 3, stdout);
+#endif
+	LAPACKE_dgetf2_piv(0, 3, 3 , A, 3, piv );
+#ifdef VERBOSE
+	MATRIX_affiche(3, 3, A, 3, stdout);
+#endif
+	for (int i = 0; i < size; ++i)
+	{
+		assert(fabs(A[i] - res[i]) <= EPSILON);
+		i++;
+	}
+	test_passed ++;
+	return 0;
+}
+
+int test_dgetrf_piv()
+{
+	int size = 9;
+	double A[] =  {7, -6, -11, 3, 7, 2, -11, 10, -2 };
+	double res[] = {-11, 0.545455, -0.636364, 2, 5.90909, 0.723077, -2, 11.0909,  -20.2923};
+	int piv[3] = {0}; 
+#ifdef VERBOSE
+	MATRIX_affiche(3, 3, A, 3, stdout);
+#endif
+	LAPACKE_dgetrf_piv(0, 3, 3 , A, 3, piv );
+#ifdef VERBOSE
+	MATRIX_affiche(3, 3, A, 3, stdout);
+#endif
+	for (int i = 0; i < size; ++i)
+	{
+		assert(fabs(A[i] - res[i]) <= EPSILON);
+		i++;
+	}
+	test_passed ++;
+	return 0;
+}
 
 int test_dtrsm(){
 
@@ -116,7 +159,7 @@ int test_dtrsm(){
 	double * C = alloc(MATSIZE, 1);
 	MATRIX_init_id(MATSIZE, MATSIZE, A, MATSIZE);
 	MATRIX_init_id(MATSIZE, 1, B, MATSIZE);
-
+	MATRIX_init_zero(MATSIZE, 1, C, MATSIZE);
 #ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, MATSIZE, A, MATSIZE, stdout);
 	MATRIX_affiche(MATSIZE, 1, B, MATSIZE, stdout);
@@ -131,6 +174,7 @@ int test_dtrsm(){
   				1.0, A, MATSIZE, B, MATSIZE);
 #ifdef VERBOSE
 	MATRIX_affiche(MATSIZE, 1, B, MATSIZE, stdout);
+	MATRIX_affiche(MATSIZE, 1, C, MATSIZE, stdout);
 #endif
 	cblas_dgemm_scalaire(MATSIZE, MATSIZE, MATSIZE,1.0,
 							  A, MATSIZE,
@@ -138,7 +182,7 @@ int test_dtrsm(){
                  			  C, MATSIZE);
 	for (int i = 0; i < MATSIZE; ++i)
 	{
-		assert((B[i]) == C[i]);	
+		assert(B[i] == C[i]);	
 	}
 	test_passed ++;
 	return 0;
@@ -247,6 +291,8 @@ int main(void)
 	test_example();
 	test_example_multiple();
 	test_dgetrf();
+	test_dgetf2_piv();
+	test_dgetrf_piv();
 
 	test_total = test_passed + test_failed;
 	printf(ANSI_COLOR_GREEN"%d tests run and passed.\n"ANSI_COLOR_RESET, test_passed);
