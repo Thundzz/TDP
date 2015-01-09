@@ -51,4 +51,6 @@ void MATRIX_init_example_x(int m, int n, double* a, int lda);
 
 void MATRIX_affiche(int m, int n, double * a, int lda, FILE* flux);
 
+void MATRIX_copie(double* c, int m, int n, double * a, int lda);
+
 #endif
