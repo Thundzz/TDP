@@ -24,16 +24,10 @@ void lu_mpi(int myrank, int nb_processes, int mat_size)
 
 		MATRIX_init_lower(mat_size, L, mat_size);
 		MATRIX_init_upper(mat_size, U, mat_size);
-		printf("====== U ====== \n");
-		MATRIX_affiche(mat_size, mat_size, U, mat_size, stdout);
-		printf("====== L ======\n");
-		MATRIX_affiche(mat_size, mat_size, L, mat_size, stdout);
 		cblas_dgemm_scalaire(mat_size, mat_size, mat_size,1.0,
 								  L, mat_size,
 					 			  U, mat_size,
 	                 			  A, mat_size);
-		printf("====== A=LU =======\n");
-		MATRIX_affiche(mat_size, mat_size, A, mat_size, stdout);
 	}
 
 	MPI_Datatype type_column;
@@ -48,12 +42,14 @@ void lu_mpi(int myrank, int nb_processes, int mat_size)
 	int* local = malloc(proc_num_cols*sizeof(int));
 
 	double start, end;
-	start = MPI_Wtime();
+
 	lu_scatter_columns(myrank, nb_processes, A, nb_cols, col_size, local, cols, proc_num_cols);
+	start = MPI_Wtime();
 	lu_mpi_process(myrank, nb_processes, cols, proc_num_cols, nb_cols, mat_size, BSZ);
+	end = MPI_Wtime() - start;
 	lu_gather_columns(myrank,A, nb_cols, col_size,
 						cols, local, proc_num_cols, type_column);
-	end = MPI_Wtime() - start;
+
 
 	MPI_Allreduce(MPI_IN_PLACE, &end, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
@@ -68,8 +64,6 @@ void lu_mpi(int myrank, int nb_processes, int mat_size)
 		}
 		fclose(f);
 
-		printf("LU decomposition of A\n");
-		MATRIX_affiche(mat_size, mat_size, A, mat_size, stdout);
 		free(L);
 		free(U);
 		free(A);
@@ -98,6 +92,6 @@ int main(int argc, char** argv)
 		lu_mpi(myrank, nb_processes, matsize);
 	}
 
-
+	MPI_Finalize();
 	return 0;
 }

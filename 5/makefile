@@ -19,4 +19,4 @@ all: $(EXEC) $(BENCH) $(TESTS)
 	$(CC) -o $@ -c $< $(CFLAGS) $(VERB)
 	
 clean:
-	rm -rf *.o  *.[oe][0-9]* *~ *# *.out
+	rm -rf *.o  *.[oe][0-9]* *~ *# *.out *.dat
