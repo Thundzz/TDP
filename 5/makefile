@@ -8,7 +8,7 @@ TESTS= driver.out driver_mpi.out
 VERB = #-DVERBOSE
 
 
-LIB=dscal.o dgemm.o dger.o util.o lu_seq.o ddot.o
+LIB=dscal.o dgemm.o dger.o util.o lu_seq.o ddot.o comm.o
 
 all: $(EXEC) $(BENCH) $(TESTS)
 
