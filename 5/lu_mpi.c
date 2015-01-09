@@ -57,20 +57,23 @@ void lu_mpi_process(int myrank, int nb_processes,
 		}
 		MPI_Bcast(LU_tmp, mb*nb, MPI_DOUBLE, LU_from, MPI_COMM_WORLD);
 		
-		for (int k = 0; k < proc_num_cols && i <nb_cols; ++k)
+		if  (i < nb_cols-1)
 		{
-			if(col_ids[k] > i)
+			for (int k = 0; k < proc_num_cols; ++k)
 			{
-				LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  LU_tmp,  mb, &cols[k][nb*i], mb);
-				
-				// MATRIX_affiche(mb-nb*(i+1), nb, &LU_tmp[nb*(i+1)], mb, stdout);
-				// MATRIX_affiche(nb, nb, &cols[k][nb*i], mb, stdout);		
-				// MATRIX_affiche(mb-nb*(i+1), nb, &cols[k][nb*(i+1)], mb, stdout);		
+				if(col_ids[k] > i)
+				{
+					LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  LU_tmp,  mb, &cols[k][nb*i], mb);
+					
+					// MATRIX_affiche(mb-nb*(i+1), nb, &LU_tmp[nb*(i+1)], mb, stdout);
+					// MATRIX_affiche(nb, nb, &cols[k][nb*i], mb, stdout);		
+					// MATRIX_affiche(mb-nb*(i+1), nb, &cols[k][nb*(i+1)], mb, stdout);		
 
-				cblas_dgemm_scalaire(mb-nb*(i+1), nb, nb,
-					   		-1.0, &LU_tmp[nb*(i+1)], mb,
-					   		&cols[k][nb*i], mb,
-					   		&cols[k][nb*(i+1)], mb);
+					cblas_dgemm_scalaire(mb-nb*(i+1), nb, nb,
+						   		-1.0, &LU_tmp[nb*(i+1)], mb,
+						   		&cols[k][nb*i], mb,
+						   		&cols[k][nb*(i+1)], mb);
+				}
 			}
 		}
 	}
