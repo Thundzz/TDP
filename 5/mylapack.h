@@ -5,6 +5,7 @@
 #define LAPACKE_UPPER 101
 #define LAPACKE_UNIT 200
 #define LAPACKE_NUNIT 201
+#define BSZ 3
 
 double cblas_ddot(const int N, const double *X, const int incX,
                   const double *Y, const int incY);

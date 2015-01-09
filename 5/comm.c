@@ -20,9 +20,9 @@ int get_proc_num_cols(int myrank, int nb_cols, int nb_processes)
 	int proc_num_cols = nb_cols/nb_processes; 
 	if (r > 0)
 	{
-		if(proc_num_cols % 2 == 0 && myrank <= r-1)
+		if(proc_num_cols % 2 == 0 && myrank < r)
 			proc_num_cols ++;
-		else if(proc_num_cols % 2 != 0 && myrank >= r)
+		else if(proc_num_cols % 2 != 0 && myrank >= nb_processes - r)
 			proc_num_cols ++;
 	}
 	return proc_num_cols;
@@ -99,6 +99,72 @@ void MATRIX_collect(int myrank, double* A, int nb_cols, int col_size,
 		{
 			colnum = local[i];
 			MPI_Send(cols[i], 1, type_column, 0, colnum, MPI_COMM_WORLD);
+		}
+	}
+}
+
+void lu_scatter_columns(int myrank, int nb_processes, double* A, int nb_cols, int col_size, int* local,
+						double** cols, int proc_num_cols)
+{
+	/*Creation of a MPI Type column*/
+	MPI_Datatype type_column;
+	create_column_type(&type_column, col_size);		
+
+	/*Divide global matrix into columns and distribute to all processes*/
+	MATRIX_dispatch(myrank, nb_processes, A, nb_cols, col_size,
+					cols, proc_num_cols, local, type_column);
+}
+
+void lu_gather_columns(int myrank, double* A, int nb_cols, int col_size,
+							double** cols, int* local, int proc_num_cols, MPI_Datatype type_column)
+{
+	/*Gather columns on proc 0*/
+	MATRIX_collect(myrank, A, nb_cols, col_size,
+				cols, proc_num_cols, local, type_column);
+	
+
+	/*Free columns*/
+	for (int i = 0; i < proc_num_cols; ++i)
+	{
+		free(cols[i]);
+	}
+	free(cols);
+	free(local);
+}
+
+void lu_mpi_process(int myrank, int nb_processes,
+					double** cols, int proc_num_cols, int nb_cols, int mb, int nb)
+{
+	int next_col_id = 0;
+	
+	int LU_from;
+	double* LU_tmp = malloc(mb*nb*sizeof(double));
+	
+	for (int i = 0; i < nb_cols; ++i)
+	{
+		if(i % nb_processes != i % (2*nb_processes))
+			LU_from = nb_processes - 1 - (i%nb_processes);
+		else
+			LU_from = i%nb_processes;
+		if(myrank == LU_from)
+		{
+			LAPACKE_dgetrf(0, mb-nb*i, nb, &cols[next_col_id][nb*i], mb, NULL);
+			MATRIX_copie(LU_tmp, mb, nb, cols[next_col_id], mb);
+			next_col_id++;
+		}
+		MPI_Bcast(LU_tmp, mb*nb, MPI_DOUBLE, LU_from, MPI_COMM_WORLD);
+		
+		if(i < nb_cols-1)
+		{
+			for (int k = next_col_id; k < proc_num_cols; ++k)
+			{
+				LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  &LU_tmp[nb*i],  mb, &cols[k][nb*i], mb);
+
+				cblas_dgemm_scalaire(mb-nb*(i+1), nb, nb,
+					   		-1.0, &LU_tmp[nb*(i+1)], mb,
+					   		&cols[k][nb*i], mb,
+					   		&cols[k][nb*(i+1)], mb);
+			}
 		}
 	}
 }

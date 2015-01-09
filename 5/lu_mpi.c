@@ -1,116 +1,39 @@
 #include "util.h"
 #include "mpi.h"
 #include "comm.h"
+#include "cblas.h"
 #include "mylapack.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-void lu_scatter_columns(int myrank, int nb_processes, double* A, int nb_cols, int col_size, int* local,
-						double** cols, int proc_num_cols)
+void lu_mpi(int myrank, int nb_processes, int mat_size)
 {
-	/*Creation of a MPI Type column*/
-	MPI_Datatype type_column;
-	create_column_type(&type_column, col_size);		
-
-	/*Divide global matrix into columns and distribute to all processes*/
-	MATRIX_dispatch(myrank, nb_processes, A, nb_cols, col_size,
-					cols, proc_num_cols, local, type_column);
-}
-
-void lu_gather_columns(int myrank, double* A, int nb_cols, int col_size,
-							double** cols, int* local, int proc_num_cols, MPI_Datatype type_column)
-{
-	/*Gather columns on proc 0*/
-	MATRIX_collect(myrank, A, nb_cols, col_size,
-				cols, proc_num_cols, local, type_column);
-	
-
-	/*Free columns*/
-	for (int i = 0; i < proc_num_cols; ++i)
-	{
-		free(cols[i]);
-	}
-	free(cols);
-	free(local);
-}
-
-void lu_mpi_process(int myrank, int nb_processes,
-					double** cols, int* col_ids, int proc_num_cols, int nb_cols, int mb, int nb)
-{
-	int next_col_id = 0;
-	
-	int LU_from;
-	double* LU_tmp = malloc(mb*nb*sizeof(double));
-	
-	for (int i = 0; i < nb_cols; ++i)
-	{
-		if(i % nb_processes != i % (2*nb_processes))
-			LU_from = nb_processes - 1 - (i%nb_processes);
-		else
-			LU_from = i%nb_processes;
-		if(myrank == LU_from)
-		{
-			// MATRIX_affiche(mb-nb*i, nb, &cols[next_col_id][nb*i], mb, stdout);
-			LAPACKE_dgetrf(0, mb-nb*i, nb, &cols[next_col_id][nb*i], mb, NULL);
-			MATRIX_copie(LU_tmp, mb-nb*i, nb, &cols[next_col_id][nb*i], mb);
-			next_col_id++;
-		}
-		MPI_Bcast(LU_tmp, mb*nb, MPI_DOUBLE, LU_from, MPI_COMM_WORLD);
-		
-		for (int k = 0; k < proc_num_cols; ++k)
-		{
-			if(col_ids[k] > i && i < nb_cols-1)
-			{
-				LAPACKE_dtrsm(LAPACKE_LOWER, LAPACKE_UNIT,  nb, nb, 1,  LU_tmp,  mb, &cols[k][nb*i], mb);
-				
-				// MATRIX_affiche(mb-nb*(i+1), nb, &LU_tmp[nb*(i+1)], mb, stdout);
-				// MATRIX_affiche(nb, nb, &cols[k][nb*i], mb, stdout);		
-				// MATRIX_affiche(mb-nb*(i+1), nb, &cols[k][nb*(i+1)], mb, stdout);		
-
-				cblas_dgemm_scalaire(mb-nb*(i+1), nb, nb,
-					   		-1.0, &LU_tmp[nb*(i+1)], mb,
-					   		&cols[k][nb*i], mb,
-					   		&cols[k][nb*(i+1)], mb);
-			}
-		}
-	}
-	// if(myrank == 1){
-	// 	MATRIX_affiche(mb, nb, cols[0], mb, stdout);		
-	// 	MATRIX_affiche(mb, nb, cols[1], mb, stdout);		
-	// }
-	//free(LU_tmp);
-}
-
-#define N 6
-#define NB 2
-
-int main()
-{
-	int myrank, nb_processes;
-	MPI_Init( NULL, NULL ); 
-	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
-	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
-
 	/*Initialize global matrix on proc 0*/
-	int nb_cols = N/NB;
-	int col_size = N*NB;
-	double * A = NULL;
+	int nb_cols = mat_size/BSZ;
+	int col_size = mat_size*BSZ;
+
+	double* A = NULL;
+	double* L = NULL;
+	double* U = NULL;
+
 	if(myrank == 0)
 	{
-		double * L = alloc(N, N);
-		double * U = alloc(N, N);
-		A = alloc(N, N);
+		A = malloc(mat_size*mat_size*sizeof(double));
+		L = malloc(mat_size*mat_size*sizeof(double));
+		U = malloc(mat_size*mat_size*sizeof(double));
 
-		MATRIX_init_lower(N, L, N);
-		MATRIX_init_upper(N, U, N);
-		MATRIX_affiche(N, N, U, N, stdout);
-		MATRIX_affiche(N, N, L, N, stdout);
-		cblas_dgemm_scalaire(N, N, N,1.0,
-								  L, N,
-					 			  U, N,
-	                 			  A, N);
-
-		MATRIX_affiche(N, N, A, N, stdout);
+		MATRIX_init_lower(mat_size, L, mat_size);
+		MATRIX_init_upper(mat_size, U, mat_size);
+		printf("====== U ====== \n");
+		MATRIX_affiche(mat_size, mat_size, U, mat_size, stdout);
+		printf("====== L ======\n");
+		MATRIX_affiche(mat_size, mat_size, L, mat_size, stdout);
+		cblas_dgemm_scalaire(mat_size, mat_size, mat_size,1.0,
+								  L, mat_size,
+					 			  U, mat_size,
+	                 			  A, mat_size);
+		printf("====== A=LU =======\n");
+		MATRIX_affiche(mat_size, mat_size, A, mat_size, stdout);
 	}
 
 	MPI_Datatype type_column;
@@ -123,17 +46,58 @@ int main()
 		cols[i] = malloc((col_size+1)*sizeof(double));
 	}
 	int* local = malloc(proc_num_cols*sizeof(int));
+
+	double start, end;
+	start = MPI_Wtime();
 	lu_scatter_columns(myrank, nb_processes, A, nb_cols, col_size, local, cols, proc_num_cols);
-
-	lu_mpi_process(myrank, nb_processes, cols, local, proc_num_cols, nb_cols, N, NB);
-
+	lu_mpi_process(myrank, nb_processes, cols, proc_num_cols, nb_cols, mat_size, BSZ);
 	lu_gather_columns(myrank,A, nb_cols, col_size,
 						cols, local, proc_num_cols, type_column);
+	end = MPI_Wtime() - start;
+
+	MPI_Allreduce(MPI_IN_PLACE, &end, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+
 	if(myrank == 0)
 	{
-		MATRIX_affiche(N, N, A, N, stdout);
+		char timefile[20];
+		sprintf(timefile, "time%d.dat", nb_processes);
+		FILE* f= fopen(timefile, "w");
+		if(f != NULL)
+		{
+			fprintf(f, "%g\n", end);
+		}
+		fclose(f);
+
+		printf("LU decomposition of A\n");
+		MATRIX_affiche(mat_size, mat_size, A, mat_size, stdout);
+		free(L);
+		free(U);
 		free(A);
 	}
+
+}
+
+int main(int argc, char** argv)
+{
+	int myrank, nb_processes, matsize;
+	MPI_Init( NULL, NULL ); 
+	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
+	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
+
+	if(argc != 2)
+	{
+		if(myrank == 0)
+			printf("Please set the size of the matrix\n");
+		MPI_Finalize();
+		return -1;
+	}
+
+	else
+	{
+		matsize = atoi(argv[1]);
+		lu_mpi(myrank, nb_processes, matsize);
+	}
+
 
 	return 0;
 }
