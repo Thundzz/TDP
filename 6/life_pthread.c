@@ -7,11 +7,10 @@
 // #define PRINT_ALIVE
 // #define OUTPUT_BOARD
 #define BS 1000
-#define THREADNUM 4
+#define THREADNUM 8
 
 pthread_cond_t cond[THREADNUM];
-pthread_cond_t cond2[THREADNUM];
-pthread_cond_t cond3[THREADNUM];
+
 pthread_mutex_t locks [THREADNUM];
 int counter[THREADNUM];
 int counter2[THREADNUM];
@@ -77,6 +76,29 @@ int generate_initial_board(int N, int *board, int ldboard)
     return num_alive;
 }
 
+void unlock_and_wait_neighbours(int me, int* neighbour, 
+								int* counter, pthread_cond_t* cond, pthread_mutex_t* locks)
+{
+	for (int i = 0; i < 2; ++i)
+	{
+		pthread_mutex_lock(&locks[neighbour[i]]);
+		counter[neighbour[i]]++;
+		if(counter[neighbour[i]] == 2)
+		{
+			pthread_cond_signal(&cond[neighbour[i]]);
+		}
+		pthread_mutex_unlock(&locks[neighbour[i]]);
+	}
+
+	pthread_mutex_lock(&locks[me]);		
+	while(counter[me] != 2)
+	{
+		pthread_cond_wait(&cond[me], &locks[me]);			
+	}
+	counter[me] = 0;
+	pthread_mutex_unlock(&locks[me]);	
+}
+
 void * thread_f(void * p)
 {
 	Params * params = (Params *) p;
@@ -117,25 +139,7 @@ void * thread_f(void * p)
 			cell(BS+1,    i) = cell( 1,  i);
 		}
 
-		for (int i = 0; i < 2; ++i)
-		{
-			pthread_mutex_lock(&locks[neighbour[i]]);
-			counter[neighbour[i]]++;
-			if(counter[neighbour[i]] == 2)
-			{
-				pthread_cond_signal(&cond[neighbour[i]]);
-			}
-			pthread_mutex_unlock(&locks[neighbour[i]]);
-		}
-		//Attendre
-		pthread_mutex_lock(&locks[me]);		
-		while(counter[me] != 2)
-		{
-			pthread_cond_wait(&cond[me], &locks[me]);			
-		}
-		counter[me] = 0;
-		pthread_mutex_unlock(&locks[me]);
-	
+		unlock_and_wait_neighbours(me, neighbour, counter, cond, locks);
 
 		for (j = start; j <= end; j++) {
 			for (i = 1; i <= BS; i++) {
@@ -146,24 +150,7 @@ void * thread_f(void * p)
 		   }
 		}
 
-		for (int i = 0; i < 2; ++i)
-		{
-			pthread_mutex_lock(&locks[neighbour[i]]);
-			counter2[neighbour[i]]++;
-			if(counter2[neighbour[i]] == 2)
-			{
-				pthread_cond_signal(&cond2[neighbour[i]]);
-			}
-			pthread_mutex_unlock(&locks[neighbour[i]]);
-		}
-		//Attendre
-		pthread_mutex_lock(&locks[me]);		
-		while(counter2[me] != 2)
-		{
-			pthread_cond_wait(&cond2[me], &locks[me]);			
-		}
-		counter2[me] = 0;
-		pthread_mutex_unlock(&locks[me]);
+		unlock_and_wait_neighbours(me, neighbour, counter2, cond, locks);
 
 		num_alive_local[me] = 0;
 		for (j = start; j <= end; j++) {
@@ -182,24 +169,7 @@ void * thread_f(void * p)
 			}
 		}
 
-		for (int i = 0; i < 2; ++i)
-		{
-			pthread_mutex_lock(&locks[neighbour[i]]);
-			counter3[neighbour[i]]++;
-			if(counter3[neighbour[i]] == 2)
-			{
-				pthread_cond_signal(&cond3[neighbour[i]]);
-			}
-			pthread_mutex_unlock(&locks[neighbour[i]]);
-		}
-		//Attendre
-		pthread_mutex_lock(&locks[me]);		
-		while(counter3[me] != 2)
-		{
-			pthread_cond_wait(&cond3[me], &locks[me]);			
-		}
-		counter3[me] = 0;
-		pthread_mutex_unlock(&locks[me]);
+		unlock_and_wait_neighbours(me, neighbour, counter3, cond, locks);
 	}
     return NULL;
 }
@@ -224,9 +194,6 @@ int main(int argc, char* argv[])
     for (int i = 0; i < THREADNUM; ++i)
     {
     	pthread_cond_init( &cond[i], NULL);
-    	pthread_cond_init( &cond2[i], NULL);
-    	pthread_cond_init( &cond3[i], NULL);
-
     	pthread_mutex_init ( &locks[i], NULL);
     }
 
