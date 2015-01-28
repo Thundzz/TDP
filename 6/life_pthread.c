@@ -76,8 +76,8 @@ int generate_initial_board(int N, int *board, int ldboard)
     return num_alive;
 }
 
-void unlock_and_wait_neighbours(int me, int* neighbour, 
-								int* counter, pthread_cond_t* cond, pthread_mutex_t* locks)
+void unlock_neighbours(int* neighbour, 
+						int* counter, pthread_cond_t* cond, pthread_mutex_t* locks)
 {
 	for (int i = 0; i < 2; ++i)
 	{
@@ -89,8 +89,10 @@ void unlock_and_wait_neighbours(int me, int* neighbour,
 		}
 		pthread_mutex_unlock(&locks[neighbour[i]]);
 	}
-
-	pthread_mutex_lock(&locks[me]);		
+}
+void lock_self(int me, int* counter, pthread_cond_t* cond, pthread_mutex_t* locks)
+{
+	pthread_mutex_lock(&locks[me]);
 	while(counter[me] != 2)
 	{
 		pthread_cond_wait(&cond[me], &locks[me]);			
@@ -139,7 +141,8 @@ void * thread_f(void * p)
 			cell(BS+1,    i) = cell( 1,  i);
 		}
 
-		unlock_and_wait_neighbours(me, neighbour, counter, cond, locks);
+		unlock_neighbours(neighbour, counter, cond, locks);
+		lock_self(me, counter, cond, locks);
 
 		for (j = start; j <= end; j++) {
 			for (i = 1; i <= BS; i++) {
@@ -149,8 +152,8 @@ void * thread_f(void * p)
 			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
 		   }
 		}
-
-		unlock_and_wait_neighbours(me, neighbour, counter2, cond, locks);
+		unlock_neighbours(neighbour, counter2, cond, locks);
+		lock_self(me, counter2, cond, locks);
 
 		num_alive_local[me] = 0;
 		for (j = start; j <= end; j++) {
@@ -168,8 +171,9 @@ void * thread_f(void * p)
 				}
 			}
 		}
+		unlock_neighbours(neighbour, counter3, cond, locks);
+		lock_self(me, counter3, cond, locks);
 
-		unlock_and_wait_neighbours(me, neighbour, counter3, cond, locks);
 	}
     return NULL;
 }
