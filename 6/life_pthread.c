@@ -6,8 +6,8 @@
 
 // #define PRINT_ALIVE
 // #define OUTPUT_BOARD
-#define BS 1000
-#define THREADNUM 8
+#define BS 10000
+#define THREADNUM 4
 
 pthread_cond_t cond[THREADNUM];
 
@@ -143,8 +143,21 @@ void * thread_f(void * p)
 
 		unlock_neighbours(neighbour, counter, cond, locks);
 		lock_self(me, counter, cond, locks);
+		int k = 0;
+		j = start;
+		do{
+			for (i = 1; i <= BS; i++) {
+				ngb( i, j ) =
+			    	cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
+			    	cell( i-1, j   ) +                  cell( i+1, j   ) +
+			   		cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
+			}
+			j=end; k++;
+		}while(k<=1);
 
-		for (j = start; j <= end; j++) {
+		unlock_neighbours(neighbour, counter2, cond, locks);
+
+		for (j = start+1; j <= end-1; j++) {
 			for (i = 1; i <= BS; i++) {
 			ngb( i, j ) =
 			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
@@ -152,11 +165,31 @@ void * thread_f(void * p)
 			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
 		   }
 		}
-		unlock_neighbours(neighbour, counter2, cond, locks);
 		lock_self(me, counter2, cond, locks);
-
+		
 		num_alive_local[me] = 0;
-		for (j = start; j <= end; j++) {
+		k = 0;
+		j = start;
+		do{
+			for (i = 1; i <= BS; i++) {
+				if ( (ngb( i, j ) < 2) || 
+					(ngb( i, j ) > 3) ) {
+					cell(i, j) = 0;
+				}
+				else {
+				if ((ngb( i, j )) == 3)
+						cell(i, j) = 1;
+				}
+				if (cell(i, j) == 1) {
+					num_alive_local[me] ++;
+				}
+			}
+			j=end; k++;
+		}while(k<=1);
+		
+		unlock_neighbours(neighbour, counter3, cond, locks);
+
+		for (j = start+1; j <= end-1; j++) {
 			for (i = 1; i <= BS; i++) {
 				if ( (ngb( i, j ) < 2) || 
 					(ngb( i, j ) > 3) ) {
@@ -171,7 +204,6 @@ void * thread_f(void * p)
 				}
 			}
 		}
-		unlock_neighbours(neighbour, counter3, cond, locks);
 		lock_self(me, counter3, cond, locks);
 
 	}
