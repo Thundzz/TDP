@@ -4,6 +4,8 @@
 #include <string.h>
 
 //#define PRINT_ALIVE
+// #define OUTPUT_BOARD
+
 #define BS 1000
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]

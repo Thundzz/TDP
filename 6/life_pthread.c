@@ -4,19 +4,26 @@
 #include <string.h>
 #include <pthread.h>
 
-//#define PRINT_ALIVE
+// #define PRINT_ALIVE
+// #define OUTPUT_BOARD
 #define BS 1000
 #define THREADNUM 4
 
+pthread_cond_t cond[THREADNUM];
+pthread_cond_t cond2[THREADNUM];
+pthread_cond_t cond3[THREADNUM];
 pthread_mutex_t locks [THREADNUM];
 int counter[THREADNUM];
+int counter2[THREADNUM];
+int counter3[THREADNUM];
+
+int num_alive_local[THREADNUM];
 
 typedef struct params {
 	int maxloop;
 	int ldboard;
 	int *board;
 	int ldnbngb;
-	int num_alive;
 	int * nbngb;
 	int me;
 } Params;
@@ -78,31 +85,57 @@ void * thread_f(void * p)
 	int * board  = params->board ;
 	int * nbngb = params ->nbngb;
 	int ldnbngb= params->ldnbngb;
-	int num_alive= params->num_alive;
 	int me = params->me;
 
 	int start = me*BS/THREADNUM +1;
 	int end;
-	if (me == THREADNUM)
+	if (me == THREADNUM-1)
 		end = BS;
 	else
 		end = (me+1)*BS/THREADNUM;
-
 	int neighbour[2] = {(me-1+THREADNUM)%THREADNUM, (me+1)%THREADNUM};
 
 	int loop, i, j;
-	for (loop = 1; loop <= maxloop; loop++) {
-		cell(   0, 0   ) = cell(BS, BS);
-		cell(   0, BS+1) = cell(BS,  1);
-		cell(BS+1, 0   ) = cell( 1, BS);
-		cell(BS+1, BS+1) = cell( 1,  1);
-
-		for (i = start; i <= end; i++) {
-		    cell(   i,    0) = cell( i, BS);
-		    cell(   i, BS+1) = cell( i,  1);
-		    cell(   0,    i) = cell(BS,  i);
-		    cell(BS+1,    i) = cell( 1,  i);
+	for (loop = 1; loop <= maxloop; loop++) 
+	{
+		if(me == THREADNUM-1)
+		{
+			cell(BS+1, 0   ) = cell( 1, BS);
+			cell(BS+1, BS+1) = cell( 1,  1);
+			for (i = 1; i <= BS; i++)
+		    	cell(   i, BS+1) = cell( i,  1);
 		}
+		if(me == 0)
+		{
+			cell(   0, 0   ) = cell(BS, BS);
+			cell(   0, BS+1) = cell(BS,  1);	
+			for (i = 1; i <= BS; i++)
+				cell(   i,    0) = cell( i, BS);
+		}
+		for (i = start; i <= end; i++) {
+			cell(   0,    i) = cell(BS,  i);
+			cell(BS+1,    i) = cell( 1,  i);
+		}
+
+		for (int i = 0; i < 2; ++i)
+		{
+			pthread_mutex_lock(&locks[neighbour[i]]);
+			counter[neighbour[i]]++;
+			if(counter[neighbour[i]] == 2)
+			{
+				pthread_cond_signal(&cond[neighbour[i]]);
+			}
+			pthread_mutex_unlock(&locks[neighbour[i]]);
+		}
+		//Attendre
+		pthread_mutex_lock(&locks[me]);		
+		while(counter[me] != 2)
+		{
+			pthread_cond_wait(&cond[me], &locks[me]);			
+		}
+		counter[me] = 0;
+		pthread_mutex_unlock(&locks[me]);
+	
 
 		for (j = start; j <= end; j++) {
 			for (i = 1; i <= BS; i++) {
@@ -115,57 +148,59 @@ void * thread_f(void * p)
 
 		for (int i = 0; i < 2; ++i)
 		{
-			printf("thread %d inc %d\n", me, neighbour[i]);
 			pthread_mutex_lock(&locks[neighbour[i]]);
-			counter[neighbour[i]]++;
+			counter2[neighbour[i]]++;
+			if(counter2[neighbour[i]] == 2)
+			{
+				pthread_cond_signal(&cond2[neighbour[i]]);
+			}
 			pthread_mutex_unlock(&locks[neighbour[i]]);
 		}
-
-		while(counter[me]>= 2)
+		//Attendre
+		pthread_mutex_lock(&locks[me]);		
+		while(counter2[me] != 2)
 		{
-			// printf("thread %d counter %d\n", me, counter[me]);
+			pthread_cond_wait(&cond2[me], &locks[me]);			
 		}
-		counter[me]-= 2;
-		printf("Je suis Charlie %d\n", me);
-		num_alive = 0;
+		counter2[me] = 0;
+		pthread_mutex_unlock(&locks[me]);
+
+		num_alive_local[me] = 0;
 		for (j = start; j <= end; j++) {
 			for (i = 1; i <= BS; i++) {
 				if ( (ngb( i, j ) < 2) || 
-				     (ngb( i, j ) > 3) ) {
-				    cell(i, j) = 0;
+					(ngb( i, j ) > 3) ) {
+					cell(i, j) = 0;
 				}
 				else {
-				    if ((ngb( i, j )) == 3)
-					cell(i, j) = 1;
+					if ((ngb( i, j )) == 3)
+						cell(i, j) = 1;
 				}
 				if (cell(i, j) == 1) {
-				    num_alive ++;
+					num_alive_local[me] ++;
 				}
-		    }
+			}
 		}
-
-		#ifdef OUTPUT_BOARD
-	    output_board( BS, &(cell(1, 1)), ldboard, 0 );
-		#endif
-		#ifdef PRINT_ALIVE
-		printf("%d \n", num_alive);
-	    #endif
 
 		for (int i = 0; i < 2; ++i)
 		{
 			pthread_mutex_lock(&locks[neighbour[i]]);
-			printf("thread %d inc %d\n", me, neighbour[i]);
-			counter[neighbour[i]]++;
+			counter3[neighbour[i]]++;
+			if(counter3[neighbour[i]] == 2)
+			{
+				pthread_cond_signal(&cond3[neighbour[i]]);
+			}
 			pthread_mutex_unlock(&locks[neighbour[i]]);
 		}
-
-		while(counter[me]>= 2)
+		//Attendre
+		pthread_mutex_lock(&locks[me]);		
+		while(counter3[me] != 2)
 		{
-			//printf("thread %d counter %d \n", me, counter[me]);
+			pthread_cond_wait(&cond3[me], &locks[me]);			
 		}
-		counter[me]-= 2;
-
-    }
+		counter3[me] = 0;
+		pthread_mutex_unlock(&locks[me]);
+	}
     return NULL;
 }
 
@@ -188,6 +223,10 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < THREADNUM; ++i)
     {
+    	pthread_cond_init( &cond[i], NULL);
+    	pthread_cond_init( &cond2[i], NULL);
+    	pthread_cond_init( &cond3[i], NULL);
+
     	pthread_mutex_init ( &locks[i], NULL);
     }
 
@@ -218,15 +257,24 @@ int main(int argc, char* argv[])
 		p[i].board  = board ;
 		p[i].ldnbngb= ldnbngb;
 		p[i].nbngb = nbngb;
-		p[i].num_alive= num_alive;
     	p[i].me = i;
     	counter[i]= 0;
-    	pthread_create(&workers[i], NULL, thread_f, (void *) &p[i]);
+    	counter2[i]= 0;
+    	counter3[i]= 0;
+    	num_alive_local[i] = 0;
     }
+
+    for (int i = 0; i < THREADNUM; ++i)
+    {	
+       	pthread_create(&workers[i], NULL, thread_f, (void *) &p[i]);
+    }
+
+
+    num_alive = 0;
     for (int i = 0; i < THREADNUM; ++i)
     {
     	pthread_join(workers[i], NULL);
-
+    	num_alive += num_alive_local[i];
     }
     t2 = mytimer();
 
