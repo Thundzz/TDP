@@ -63,12 +63,23 @@ int main(int argc, char* argv[])
 	int myrank, nb_processes;
   	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
 	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
-    
+    int PROCSPERLINE=sqrt(nb_processes);
+    int PROCSPERCOL =sqrt(nb_processes);
+	if(nb_processes != PROCSPERCOL*PROCSPERLINE){
+		fprintf(stderr, "Erreur, mettez un nombre carré de procs.\n");
+		MPI_Finalize();
+		exit(EXIT_FAILURE);
+	}
+    int dims[2] = {PROCSPERLINE, PROCSPERCOL};
+    int periods[2] = {1, 1};
+    MPI_Comm grid;
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods,0, &grid);
+  	MPI_Comm_rank( grid, &myrank ); 
     int i, j, loop, num_alive, maxloop;
     int ldboard, ldnbngb, ldglobboard;
     double t1, t2;
     double temps, real_time;
-	int *globboard; 
+	int *globboard= NULL; 
     int *board;
     int *nbngb;
 
@@ -84,33 +95,25 @@ int main(int argc, char* argv[])
     /*Leading dimension of the global board array*/
 	ldglobboard = BS+ 2;
     /* Leading dimension of the board array */
-    int PROCSPERLINE=sqrt(nb_processes);
-    int PROCSPERCOL =sqrt(nb_processes);
     ldboard = BS/PROCSPERLINE + 2;
     /* Leading dimension of the neigbour counters array */
     ldnbngb = BS/sqrt(nb_processes);
 
     board = malloc( ldboard * ldboard * sizeof(int) );
     nbngb = malloc( ldnbngb * ldnbngb * sizeof(int) );
-    globboard = malloc(ldglobboard*ldglobboard * sizeof(int));
 
     if(myrank == 0){
+	    globboard = malloc(ldglobboard*ldglobboard * sizeof(int));
     	num_alive = generate_initial_board( BS, globboard , ldglobboard );
 	    output_board( BS, globboard+1 + ldglobboard, ldglobboard, 0 );
     	fprintf(stderr, "Starting number of living cells = %d\n", num_alive);
 	}
-
 	MPI_Datatype block2, block;
 	MPI_Type_vector(ldboard, ldboard, ldglobboard, MPI_INT, &block2);
 	MPI_Type_create_resized(block2, 0, sizeof(int), &block);
 	MPI_Type_commit(&block);
 	int * counts = (int*) malloc(nb_processes*sizeof(int));
 	int * displs = (int*) malloc(nb_processes*sizeof(int));
-	if(nb_processes != PROCSPERCOL*PROCSPERLINE){
-		fprintf(stderr, "Erreur, mettez un nombre carré de procs.\n");
-		MPI_Finalize();
-		exit(EXIT_FAILURE);
-	}
 	// Définition des déplacements pour chaque proc
 	for (int i = 0; i < PROCSPERLINE; ++i)
 	{
@@ -122,7 +125,7 @@ int main(int argc, char* argv[])
 	}
 	MPI_Scatterv(globboard, counts, displs, block, board, ldboard*ldboard,
 				MPI_INT,0, MPI_COMM_WORLD);
-	
+
 	for (int i = 0; i < nb_processes; ++i)
 	{
 		if(myrank == i){
