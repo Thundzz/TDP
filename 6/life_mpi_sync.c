@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <string.h>
-
+#include <mpi.h>
+#include <math.h>
 //#define PRINT_ALIVE
 // #define OUTPUT_BOARD
 
-#define BS 10000
+#define BS 9
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
@@ -21,15 +22,15 @@ inline double mytimer(void)
 void output_board(int N, int *board, int ldboard, int loop)
 {
     int i,j;
-    printf("loop %d\n", loop);
+    fprintf(stderr, "loop %d\n", loop);
     for (i=0; i<N; i++) {
 		for (j=0; j<N; j++) {
 		    if ( cell( i, j ) == 1)
-			printf("X");
+			fprintf(stderr, "X");
 		    else
-			printf(" ");
+			fprintf(stderr, " ");
 		}
-	printf("\n");
+	fprintf(stderr,"\n");
     }
 }
 
@@ -44,11 +45,11 @@ int generate_initial_board(int N, int *board, int ldboard)
     for (i = 1; i <= N; i++) {
 		for (j = 1; j <= N; j++) {
 		    if (i == N/2 || j == N/2) {
-			cell(i, j) = 1;
-			num_alive ++;
+				cell(i, j) = 1;
+				num_alive ++;
 		    }
 		    else {
-			cell(i, j) = 0;
+				cell(i, j) = 0;
 		    }
 		}
     }
@@ -57,14 +58,23 @@ int generate_initial_board(int N, int *board, int ldboard)
 }
 
 int main(int argc, char* argv[])
-{
+{	
+	MPI_Init(NULL, NULL);
+	int myrank, nb_processes;
+	MPI_Request req;
+  	MPI_Status st;
+  	MPI_Comm_rank( MPI_COMM_WORLD, &myrank ); 
+	MPI_Comm_size( MPI_COMM_WORLD, &nb_processes);
+    
     int i, j, loop, num_alive, maxloop;
-    int ldboard, ldnbngb;
+    int ldboard, ldnbngb, ldglobboard;
     double t1, t2;
     double temps;
- 
+	int *globboard; 
     int *board;
     int *nbngb;
+
+
 
     if (argc < 2) {
 	maxloop = 10;
@@ -73,23 +83,58 @@ int main(int argc, char* argv[])
     }
     num_alive = 0;
 
+    /*Leading dimension of the global board array*/
+	ldglobboard = BS+ 2;
     /* Leading dimension of the board array */
-    ldboard = BS + 2;
+    int PROCSPERLINE=sqrt(nb_processes);
+    int PROCSPERCOL =sqrt(nb_processes);
+    ldboard = BS/PROCSPERLINE + 2;
     /* Leading dimension of the neigbour counters array */
-    ldnbngb = BS;
+    ldnbngb = BS/sqrt(nb_processes);
 
     board = malloc( ldboard * ldboard * sizeof(int) );
     nbngb = malloc( ldnbngb * ldnbngb * sizeof(int) );
+    globboard = malloc(ldglobboard*ldglobboard * sizeof(int));
 
-    num_alive = generate_initial_board( BS, &(cell(1, 1)), ldboard );
+    if(myrank == 0){
+    	num_alive = generate_initial_board( BS, globboard , ldglobboard );
+	    output_board( BS, globboard+1 + ldglobboard, ldglobboard, 0 );
+	}
 
-	#ifdef OUTPUT_BOARD
-    output_board( BS, &(cell(1, 1)), ldboard, 0 );
-	#endif
-    printf("Starting number of living cells = %d\n", num_alive);
+	MPI_Datatype block2, block;
+	MPI_Type_vector(ldboard, ldboard, ldglobboard, MPI_INT, &block2);
+	MPI_Type_create_resized(block2, 0, sizeof(int), &block);
+	MPI_Type_commit(&block);
+	int * counts = (int*) malloc(nb_processes*sizeof(int));
+	int * displs = (int*) malloc(nb_processes*sizeof(int));
+	if(nb_processes != PROCSPERCOL*PROCSPERLINE){
+		fprintf(stderr, "Erreur, mettez un nombre carré de procs.\n");
+		MPI_Finalize();
+		exit(EXIT_FAILURE);
+	}
+	// Définition des déplacements pour chaque proc
+	for (int i = 0; i < PROCSPERLINE; ++i)
+	{
+		for (int j = 0; j < PROCSPERCOL; ++j)
+		{
+			counts[i+j*PROCSPERCOL]= 1;
+			displs[i+j*PROCSPERCOL]= i*ldglobboard*(ldboard-2)+j*(ldboard-2);
+			// i = 0,j =1
+		}
+	}
+	MPI_Scatterv(globboard, counts, displs, block, board, ldboard*ldboard,
+				MPI_INT,0, MPI_COMM_WORLD);
+	for (int i = 0; i < nb_processes; ++i)
+	{
+		if(myrank == i){
+		   	output_board( ldboard-2, board+1 +ldboard, ldboard, 0 );
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+    //fprintf(stderr, "Starting number of living cells = %d\n", num_alive);
     t1 = mytimer();
-
-    for (loop = 1; loop <= maxloop; loop++) {
+    /*
+    for (loop = 1; loop <= 1; loop++) {
 
 	cell(   0, 0   ) = cell(BS, BS);
 	cell(   0, BS+1) = cell(BS,  1);
@@ -138,14 +183,19 @@ int main(int argc, char* argv[])
     }
 
     t2 = mytimer();
+
     temps = t2 - t1;
     printf("Final number of living cells = %d\n", num_alive);
     printf("time=%.2lf ms\n",(double)temps * 1.e3);
+	*/
     #ifdef OUTPUT_BOARD
     output_board( BS, &(cell(1, 1)), ldboard, maxloop);
     #endif
+    free(counts);
+    free(displs);
     free(board);
     free(nbngb);
+	MPI_Finalize();
     return EXIT_SUCCESS;
 }
 

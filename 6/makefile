@@ -1,16 +1,19 @@
-CC=gcc
+CC=mpicc
 CFLAGS= -W -Wall -O2 -std=c99 -fopenmp
-LDFLAGS= -W -Wall -O2 -pthread -fopenmp
+LDFLAGS= -W -Wall -O2 -pthread -fopenmp -lm
 OUTPUT = #-DOUTPUT_BOARD
 EXEC= life_seq.out life_omp.out life_pthread.out
+MPI_EXECS=  life_mpi_sync.out
 TESTS= 
 LIB=
 
 
-all: $(EXEC) $(BENCH) $(TESTS)
+all: $(EXEC) $(BENCH) $(TESTS) $(MPI_EXECS)
 
 send:
 	scp * formation:TDP5
+
+
 
 %.out: %.o $(LIB)
 	$(CC)  -o $@ $(LIB) $< $(LDFLAGS) $(OUTPUT)
