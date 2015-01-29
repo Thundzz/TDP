@@ -124,14 +124,14 @@ int main(int argc, char* argv[])
 		}
 	}
 	MPI_Scatterv(globboard, counts, displs, block, board, ldboard*ldboard,
-				MPI_INT,0, MPI_COMM_WORLD);
+				MPI_INT,0, grid);
 
 	for (int i = 0; i < nb_processes; ++i)
 	{
 		if(myrank == i){
 		   	output_board( ldboard-2, board+1 +ldboard, ldboard, 0 );
 		}
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(grid);
 	}
 
     t1 = mytimer();
@@ -184,8 +184,8 @@ int main(int argc, char* argv[])
     t2 = mytimer();
 
     temps = t2 - t1;
-    MPI_Allreduce(&temps, &real_time, 1,MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    MPI_Allreduce(&num_alive, &num_alive, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&temps, &real_time, 1,MPI_DOUBLE, MPI_MAX, grid);
+    MPI_Allreduce(&num_alive, &num_alive, 1, MPI_INT, MPI_SUM, grid);
     if(myrank == 0)
     {
     	printf("Final number of living cells = %d\n", num_alive);
