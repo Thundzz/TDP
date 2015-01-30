@@ -3,10 +3,11 @@
 #include <sys/time.h>
 #include <string.h>
 
-//#define PRINT_ALIVE
+// #define PRINT_ALIVE
 // #define OUTPUT_BOARD
+#define BENCH
 
-#define BS 10000
+int BS = 1200;
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
@@ -68,8 +69,10 @@ int main(int argc, char* argv[])
 
     if (argc < 2) {
 	maxloop = 10;
-    } else {
+    } else if (argc >= 2){
 	maxloop = atoi(argv[1]);
+	if(argc > 2)
+	BS = atoi(argv[2]);
     }
     num_alive = 0;
 
@@ -141,6 +144,13 @@ int main(int argc, char* argv[])
     temps = t2 - t1;
     printf("Final number of living cells = %d\n", num_alive);
     printf("time=%.2lf ms\n",(double)temps * 1.e3);
+    #ifdef BENCH
+    	FILE* f=fopen("time_seq.dat", "w");
+    	if (f != NULL)
+    		fprintf(f,"%.2lf", temps*1.e3);
+    	fclose(f);
+    #endif
+
     #ifdef OUTPUT_BOARD
     output_board( BS, &(cell(1, 1)), ldboard, maxloop);
     #endif

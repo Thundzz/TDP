@@ -4,10 +4,10 @@
 #include <string.h>
 #include <mpi.h>
 #include <math.h>
-//#define PRINT_ALIVE
-// #define OUTPUT_BOARD
 
-#define BS 1200
+// #define PRINT_ALIVE
+// #define OUTPUT_BOARD
+#define BENCH
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
@@ -21,6 +21,8 @@
 #define UPPERRIGHT 5
 #define LOWERRIGHT 6
 #define LOWERLEFT 7
+
+int BS = 1200;
 
 inline double mytimer(void)
 {
@@ -143,11 +145,12 @@ int main(int argc, char* argv[])
     int *nbngb;
 
 
-
     if (argc < 2) {
 	maxloop = 10;
-    } else {
+    } else if (argc >= 2){
 	maxloop = atoi(argv[1]);
+	if(argc > 2)
+	BS = atoi(argv[2]);
     }
     num_alive = 0;
 
@@ -250,7 +253,15 @@ int main(int argc, char* argv[])
     if(myrank == 0)
     {
     	printf("Final number of living cells = %d\n", num_alive);
-    	printf("time=%.2lf ms\n",(double)temps * 1.e3);
+    	printf("time=%.2lf ms\n",(double)temps * 1.e3);    
+    	#ifdef BENCH
+			char fname [40];
+			sprintf(fname, "time_mpi_sync_%d.dat", nb_processes);
+    		FILE* f=fopen(fname, "w");
+    		if (f != NULL)
+    			fprintf(f,"%.2lf", temps*1.e3);
+    		fclose(f);
+    	#endif
 		#ifdef OUTPUT_BOARD
 			output_board( BS, &globboard2[1+ldglobboard], ldglobboard, maxloop);
 		#endif

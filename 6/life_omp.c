@@ -5,10 +5,13 @@
 #include <omp.h>
 
 //#define PRINT_ALIVE
-#define BS 1000
+#define BENCH
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
+
+int BS = 1200;
+int num_threads = 2;
 
 inline double mytimer(void)
 {
@@ -67,10 +70,17 @@ int main(int argc, char* argv[])
     int *nbngb;
 
     if (argc < 2) {
-	maxloop = 10;
-    } else {
-	maxloop = atoi(argv[1]);
-    }
+		maxloop = 10;
+    } 
+    else if (argc >= 2){
+		maxloop = atoi(argv[1]);
+		if(argc > 2)
+			BS = atoi(argv[2]);
+		if(argc > 3){
+			num_threads = atoi(argv[3]); 
+    	}
+	}
+	omp_set_num_threads(num_threads);
     num_alive = 0;
 
     /* Leading dimension of the board array */
@@ -145,7 +155,14 @@ int main(int argc, char* argv[])
     temps = t2 - t1;
     printf("Final number of living cells = %d\n", num_alive);
     printf("time=%.2lf ms\n",(double)temps * 1.e3);
-
+    #ifdef BENCH
+		char fname [40];
+		sprintf(fname, "time_omp_%d.dat", num_threads);
+    	FILE* f=fopen(fname, "w");
+    	if (f != NULL)
+    		fprintf(f,"%.2lf", temps*1.e3);
+    	fclose(f);
+    #endif
     #ifdef OUTPUT_BOARD
     output_board( BS, &(cell(1, 1)), ldboard, maxloop);
     #endif

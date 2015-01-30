@@ -22,4 +22,4 @@ send:
 	$(CC) -o $@ -c $< $(CFLAGS) $(OUTPUT)
 	
 clean:
-	rm -rf *.o  *.[oe][0-9]* *~ *# *.out
+	rm -rf *.o  *.[oe][0-9]* *~ *# *.out *.dat

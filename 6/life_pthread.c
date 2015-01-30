@@ -6,17 +6,17 @@
 
 // #define PRINT_ALIVE
 // #define OUTPUT_BOARD
-#define BS 6000
-#define THREADNUM 4
+#define BENCH
 
-pthread_cond_t cond[THREADNUM];
+pthread_cond_t* cond;
+pthread_mutex_t* locks;
+int* counter;
+int* counter2;
+int* counter3;
+int* num_alive_local;
 
-pthread_mutex_t locks [THREADNUM];
-int counter[THREADNUM];
-int counter2[THREADNUM];
-int counter3[THREADNUM];
-
-int num_alive_local[THREADNUM];
+int BS = 1200;
+int num_threads = 2;
 
 typedef struct params {
 	int maxloop;
@@ -119,18 +119,18 @@ void * thread_f(void * p)
 	int ldnbngb= params->ldnbngb;
 	int me = params->me;
 
-	int start = me*BS/THREADNUM +1;
+	int start = me*BS/num_threads +1;
 	int end;
-	if (me == THREADNUM-1)
+	if (me == num_threads-1)
 		end = BS;
 	else
-		end = (me+1)*BS/THREADNUM;
-	int neighbour[2] = {(me-1+THREADNUM)%THREADNUM, (me+1)%THREADNUM};
+		end = (me+1)*BS/num_threads;
+	int neighbour[2] = {(me-1+num_threads)%num_threads, (me+1)%num_threads};
 
 	int loop, i, j;
 	for (loop = 1; loop <= maxloop; loop++) 
 	{
-		if(me == THREADNUM-1)
+		if(me == num_threads-1)
 		{
 			cell(BS+1, 0   ) = cell( 1, BS);
 			cell(BS+1, BS+1) = cell( 1,  1);
@@ -229,13 +229,26 @@ int main(int argc, char* argv[])
     int *nbngb;
 
     if (argc < 2) {
-	maxloop = 10;
-    } else {
-	maxloop = atoi(argv[1]);
+		maxloop = 10;
+    } 
+    else if (argc >= 2){
+		maxloop = atoi(argv[1]);
+		if(argc > 2)
+			BS = atoi(argv[2]);
+		if(argc > 3){
+			num_threads = atoi(argv[3]); 
+    	}
     }
     num_alive = 0;
 
-    for (int i = 0; i < THREADNUM; ++i)
+	cond = malloc(num_threads*sizeof(pthread_cond_t));
+	locks = malloc(num_threads*sizeof(pthread_mutex_t));
+	counter = malloc(num_threads*sizeof(int));
+	counter2 = malloc(num_threads*sizeof(int));
+	counter3 = malloc(num_threads*sizeof(int));
+	num_alive_local = malloc(num_threads*sizeof(int));
+
+    for (int i = 0; i < num_threads; ++i)
     {
     	pthread_cond_init( &cond[i], NULL);
     	pthread_mutex_init ( &locks[i], NULL);
@@ -257,11 +270,11 @@ int main(int argc, char* argv[])
 	#endif
     printf("Starting number of living cells = %d\n", num_alive);
 
-	pthread_t workers[THREADNUM];
-	Params p[THREADNUM];
+	pthread_t workers[num_threads];
+	Params p[num_threads];
     
     t1 = mytimer();
-    for (int i = 0; i < THREADNUM; ++i)
+    for (int i = 0; i < num_threads; ++i)
     {	
     	p[i].maxloop= maxloop;
 		p[i].ldboard= ldboard;
@@ -275,14 +288,13 @@ int main(int argc, char* argv[])
     	num_alive_local[i] = 0;
     }
 
-    for (int i = 0; i < THREADNUM; ++i)
+    for (int i = 0; i < num_threads; ++i)
     {	
        	pthread_create(&workers[i], NULL, thread_f, (void *) &p[i]);
     }
 
-
     num_alive = 0;
-    for (int i = 0; i < THREADNUM; ++i)
+    for (int i = 0; i < num_threads; ++i)
     {
     	pthread_join(workers[i], NULL);
     	num_alive += num_alive_local[i];
@@ -292,9 +304,25 @@ int main(int argc, char* argv[])
     temps = t2 - t1;
     printf("Final number of living cells = %d\n", num_alive);
     printf("time=%.2lf ms\n",(double)temps * 1.e3);
+    #ifdef BENCH
+		char fname [40];
+		sprintf(fname, "time_pthread_%d.dat", num_threads);
+    	FILE* f=fopen(fname, "w");
+    	if (f != NULL)
+    		fprintf(f,"%.2lf", temps*1.e3);
+    	fclose(f);
+    #endif
     #ifdef OUTPUT_BOARD
     output_board( BS, &(cell(1, 1)), ldboard, maxloop);
     #endif
+
+	free(cond);
+	free(locks);
+	free(counter);
+	free(counter2);
+	free(counter3);
+	free(num_alive_local);
+
     free(board);
     free(nbngb);
     return EXIT_SUCCESS;
