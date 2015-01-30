@@ -6,7 +6,7 @@
 
 // #define PRINT_ALIVE
 // #define OUTPUT_BOARD
-#define BS 1000
+#define BS 6000
 #define THREADNUM 4
 
 pthread_cond_t cond[THREADNUM];
@@ -95,7 +95,7 @@ void lock_self(int me, int* counter, pthread_cond_t* cond, pthread_mutex_t* lock
 	pthread_mutex_lock(&locks[me]);
 	while(counter[me] != 2)
 	{
-		pthread_cond_wait(&cond[me], &locks[me]);			
+		pthread_cond_wait(&cond[me], &locks[me]);	
 	}
 	counter[me] = 0;
 	pthread_mutex_unlock(&locks[me]);	

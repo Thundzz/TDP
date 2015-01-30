@@ -7,7 +7,7 @@
 //#define PRINT_ALIVE
 // #define OUTPUT_BOARD
 
-#define BS 1000
+#define BS 1000	
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
@@ -219,8 +219,6 @@ int main(int argc, char* argv[])
 		    }
 		}
 
-		MPI_Barrier(grid);
-
 		num_alive = 0;
 		for (j = 1; j <= block_size; j++) {
 			for (i = 1; i <= block_size; i++) {
@@ -259,7 +257,6 @@ int main(int argc, char* argv[])
 			output_board( BS, &globboard2[1+ldglobboard], ldglobboard, maxloop);
 		#endif
 	}
-
 
     free(counts);
     free(displs);

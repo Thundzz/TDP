@@ -2,8 +2,8 @@ CC=mpicc
 CFLAGS= -W -Wall -O2 -std=c99 -fopenmp
 LDFLAGS= -W -Wall -O2 -pthread -fopenmp -lm
 OUTPUT = #-DOUTPUT_BOARD
-EXEC= life_seq.out life_omp.out life_pthread.out
-MPI_EXECS=  life_mpi_sync.out
+EXEC= life_seq.out life_omp.out life_pthread.out 
+MPI_EXECS=  life_mpi_sync.out life_mpi_async.out
 TESTS= 
 LIB=
 
