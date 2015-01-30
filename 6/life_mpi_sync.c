@@ -5,13 +5,14 @@
 #include <mpi.h>
 #include <math.h>
 //#define PRINT_ALIVE
-#define OUTPUT_BOARD
+// #define OUTPUT_BOARD
 
-#define BS 12
+#define BS 1000
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
 
+//Neighbors table indexes...
 #define LEFT 0
 #define RIGHT 1
 #define UP 2
@@ -66,6 +67,32 @@ int generate_initial_board(int N, int *board, int ldboard)
     return num_alive;
 }
 
+/**
+ * This function generates the list of the neighbors' ranks 
+ */
+void generate_neighbors_table(int* neighs, MPI_Comm grid, int myrank)
+{
+ 	int displ;
+ 	int index;
+ 	int coords[2];
+
+	index = 1;
+	displ = 1;
+	MPI_Cart_shift(grid, index, displ, &neighs[LEFT], &neighs[RIGHT]);
+	index = 0;
+	MPI_Cart_shift(grid, index, displ, &neighs[UP], &neighs[DOWN]);
+	MPI_Cart_coords(grid, myrank, 2, coords);
+	coords[0]--;
+	coords[1]--;
+	MPI_Cart_rank(grid, coords, &neighs[UPPERLEFT]);
+	coords[1]+=2;
+	MPI_Cart_rank(grid, coords, &neighs[UPPERRIGHT]);
+	coords[0]+=2;
+	MPI_Cart_rank(grid, coords, &neighs[LOWERRIGHT]);
+	coords[1]-=2;
+	MPI_Cart_rank(grid, coords, &neighs[LOWERLEFT]);
+}
+
 int main(int argc, char* argv[])
 {	
 	MPI_Init(NULL, NULL);
@@ -117,7 +144,9 @@ int main(int argc, char* argv[])
 	    globboard = malloc(ldglobboard*ldglobboard * sizeof(int));
 	    globboard2 = malloc(ldglobboard*ldglobboard * sizeof(int)); 
     	num_alive = generate_initial_board( BS, &globboard[1+ldglobboard] , ldglobboard );
-	    output_board( BS, &globboard[1+ldglobboard], ldglobboard, 0 );
+	    #ifdef OUTPUT_BOARD
+	    	output_board( BS, &globboard[1+ldglobboard], ldglobboard, 0 );
+    	#endif
     	fprintf(stderr, "Starting number of living cells = %d\n", num_alive);
 	}
 	MPI_Datatype block2, block;
@@ -145,37 +174,8 @@ int main(int argc, char* argv[])
 	MPI_Scatterv(&globboard[1+ldglobboard], counts, displs, block, &board[ldboard+1], 1,
 				sub_block,0, grid);
 
- 	int displ;
- 	int index;
- 	int coords[2];
- 	int neighs[8];
- 	// for (int i = 0; i < nb_processes; ++i)
-	// {
-		// if(myrank == i){
-				index = 1;
-				displ = 1;
- 				MPI_Cart_shift(grid, index, displ, &neighs[0], &neighs[1]);
-    			// printf("%d left:%d right:%d\n", myrank, neighs[0], neighs[1]);   
-    			index = 0;
-				MPI_Cart_shift(grid, index, displ, &neighs[2], &neighs[3]);
-    			// printf("%d up:%d down:%d\n", myrank, neighs[2], neighs[3]);
-				MPI_Cart_coords(grid, myrank, 2, coords);
-				coords[0]--;
-				coords[1]--;
-				MPI_Cart_rank(grid, coords, &neighs[4]);
-				// printf("%d upperleft:%d\n", myrank, neighs[4]);
-				coords[1]+=2;
-				MPI_Cart_rank(grid, coords, &neighs[5]);
-				// printf("%d upperright:%d\n", myrank, neighs[5]);
-				coords[0]+=2;
-				MPI_Cart_rank(grid, coords, &neighs[6]);
-				// printf("%d lowerright:%d\n", myrank, neighs[6]);
-				coords[1]-=2;
-				MPI_Cart_rank(grid, coords, &neighs[7]);
-				// printf("%d lowerleft:%d\n", myrank, neighs[7]);
-    		// }
-		// MPI_Barrier(grid);
-	// }
+	int neighs[8];
+	generate_neighbors_table(neighs, grid, myrank);
 
     t1 = mytimer();
     int block_size = ldboard-2;
@@ -209,14 +209,6 @@ int main(int argc, char* argv[])
 		MPI_Sendrecv(&cell(1, 1), 1, block_line,neighs[UP], 0, 
 				&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0,
 				grid, &st); 			//To upper
-	// for (int i = 0; i < nb_processes; ++i)
-	// {
-	// 	if(myrank == i){
-	// 	   	output_board( ldboard, board, ldboard, 99);
-	// 	   	output_board( ldboard-2, &board[1+ldboard], ldboard, 199);
-	// 	}
-	// 	MPI_Barrier(grid);
-	// }
 
 		for (j = 1; j <= block_size; j++) {
 			for (i = 1; i <= block_size; i++) {
@@ -245,14 +237,6 @@ int main(int argc, char* argv[])
 				}
 		    }
 		}
-	// for (int i = 0; i < nb_processes; ++i)
-	// {
-	// 	if(myrank == i){
-	// 	   	output_board( ldboard, board, ldboard, 0);
-	// 	   	output_board( ldboard-2, &board[1+ldboard], ldboard, loop);
-	// 	}
-	// 	MPI_Barrier(grid);
-	// }
 
 	#ifdef PRINT_ALIVE
 		printf("%d \n", num_alive);

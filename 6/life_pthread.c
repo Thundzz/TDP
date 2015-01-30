@@ -5,8 +5,8 @@
 #include <pthread.h>
 
 // #define PRINT_ALIVE
-#define OUTPUT_BOARD
-#define BS 12
+// #define OUTPUT_BOARD
+#define BS 1000
 #define THREADNUM 4
 
 pthread_cond_t cond[THREADNUM];
