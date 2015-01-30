@@ -5,8 +5,8 @@
 #include <pthread.h>
 
 // #define PRINT_ALIVE
-// #define OUTPUT_BOARD
-#define BS 10000
+#define OUTPUT_BOARD
+#define BS 12
 #define THREADNUM 4
 
 pthread_cond_t cond[THREADNUM];
@@ -129,7 +129,7 @@ void * thread_f(void * p)
 			for (i = 1; i <= BS; i++)
 		    	cell(   i, BS+1) = cell( i,  1);
 		}
-		if(me == 0)
+		else if(me == 0)
 		{
 			cell(   0, 0   ) = cell(BS, BS);
 			cell(   0, BS+1) = cell(BS,  1);	
@@ -186,7 +186,7 @@ void * thread_f(void * p)
 			}
 			j=end; k++;
 		}while(k<=1);
-		
+
 		unlock_neighbours(neighbour, counter3, cond, locks);
 
 		for (j = start+1; j <= end-1; j++) {

@@ -5,12 +5,21 @@
 #include <mpi.h>
 #include <math.h>
 //#define PRINT_ALIVE
-// #define OUTPUT_BOARD
+#define OUTPUT_BOARD
 
-#define BS 10
+#define BS 12
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
+
+#define LEFT 0
+#define RIGHT 1
+#define UP 2
+#define DOWN 3
+#define UPPERLEFT 4
+#define UPPERRIGHT 5
+#define LOWERRIGHT 6
+#define LOWERLEFT 7
 
 inline double mytimer(void)
 {
@@ -80,6 +89,8 @@ int main(int argc, char* argv[])
     double t1, t2;
     double temps, real_time;
 	int *globboard= NULL; 
+	int *globboard2= NULL; 
+
     int *board;
     int *nbngb;
 
@@ -104,14 +115,21 @@ int main(int argc, char* argv[])
 
     if(myrank == 0){
 	    globboard = malloc(ldglobboard*ldglobboard * sizeof(int));
-    	num_alive = generate_initial_board( BS, globboard , ldglobboard );
-	    output_board( BS, globboard+1 + ldglobboard, ldglobboard, 0 );
+	    globboard2 = malloc(ldglobboard*ldglobboard * sizeof(int)); 
+    	num_alive = generate_initial_board( BS, &globboard[1+ldglobboard] , ldglobboard );
+	    output_board( BS, &globboard[1+ldglobboard], ldglobboard, 0 );
     	fprintf(stderr, "Starting number of living cells = %d\n", num_alive);
 	}
 	MPI_Datatype block2, block;
-	MPI_Type_vector(ldboard, ldboard, ldglobboard, MPI_INT, &block2);
+	MPI_Type_vector(ldboard-2, ldboard-2, ldglobboard, MPI_INT, &block2);
 	MPI_Type_create_resized(block2, 0, sizeof(int), &block);
 	MPI_Type_commit(&block);
+
+	MPI_Datatype sub_block2, sub_block;
+	MPI_Type_vector(ldboard-2, ldboard-2, ldboard, MPI_INT, &sub_block2);
+	MPI_Type_create_resized(sub_block2, 0, sizeof(int), &sub_block);
+	MPI_Type_commit(&sub_block);
+
 	int * counts = (int*) malloc(nb_processes*sizeof(int));
 	int * displs = (int*) malloc(nb_processes*sizeof(int));
 	// Définition des déplacements pour chaque proc
@@ -123,74 +141,143 @@ int main(int argc, char* argv[])
 			displs[i+j*PROCSPERCOL]= i*ldglobboard*(ldboard-2)+j*(ldboard-2);
 		}
 	}
-	MPI_Scatterv(globboard, counts, displs, block, board, ldboard*ldboard,
-				MPI_INT,0, grid);
+
+	MPI_Scatterv(&globboard[1+ldglobboard], counts, displs, block, &board[ldboard+1], 1,
+				sub_block,0, grid);
+
+	// for (int i = 0; i < nb_processes; ++i)
+	// {
+	// 	if(myrank == i){
+	// 	   	output_board( ldboard, board, ldboard, 99);
+	// 	}
+	// 	MPI_Barrier(grid);
+	// }
+
+ 	int displ;
+ 	int index;
+ 	int coords[2];
+ 	int neighs[8];
+ 	// for (int i = 0; i < nb_processes; ++i)
+	// {
+		// if(myrank == i){
+				index = 1;
+				displ = 1;
+ 				MPI_Cart_shift(grid, index, displ, &neighs[0], &neighs[1]);
+    			// printf("%d left:%d right:%d\n", myrank, neighs[0], neighs[1]);   
+    			index = 0;
+				MPI_Cart_shift(grid, index, displ, &neighs[2], &neighs[3]);
+    			// printf("%d up:%d down:%d\n", myrank, neighs[2], neighs[3]);
+				MPI_Cart_coords(grid, myrank, 2, coords);
+				coords[0]--;
+				coords[1]--;
+				MPI_Cart_rank(grid, coords, &neighs[4]);
+				// printf("%d upperleft:%d\n", myrank, neighs[4]);
+				coords[1]+=2;
+				MPI_Cart_rank(grid, coords, &neighs[5]);
+				// printf("%d upperright:%d\n", myrank, neighs[5]);
+				coords[0]+=2;
+				MPI_Cart_rank(grid, coords, &neighs[6]);
+				// printf("%d lowerright:%d\n", myrank, neighs[6]);
+				coords[1]-=2;
+				MPI_Cart_rank(grid, coords, &neighs[7]);
+				// printf("%d lowerleft:%d\n", myrank, neighs[7]);
+    		// }
+		// MPI_Barrier(grid);
+	// }
+
+    t1 = mytimer();
+    int block_size = ldboard-2;
+	MPI_Datatype block_line;
+	MPI_Type_vector(block_size, 1, ldboard, MPI_INT, &block_line);
+	MPI_Type_commit(&block_line);
+
+    for (loop = 1; loop <= maxloop; loop++) {
+		MPI_Status st;
+		MPI_Sendrecv(&cell(1, 1), block_size, MPI_INT, neighs[LEFT], 0, 
+				&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0,
+				grid, &st); 			//To the left
+		MPI_Sendrecv(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, 
+				&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0,
+				grid, &st); 			//To the right
+		MPI_Sendrecv(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, 
+				&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0,
+				grid, &st); 			//To the upperright
+		MPI_Sendrecv(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, 
+				&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0,
+				grid, &st); 			//To the lowerright
+		MPI_Sendrecv(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, 
+				&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0,
+				grid, &st); 			//To the upperleft
+		MPI_Sendrecv(&cell(1, block_size), 1, MPI_INT,neighs[LOWERLEFT], 0, 
+				&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0,
+				grid, &st); 			//To the lowerleft.
+		MPI_Sendrecv(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, 
+				&cell(0, 1), 1, block_line, neighs[UP], 0,
+				grid, &st); 			//To lower
+		MPI_Sendrecv(&cell(1, 1), 1, block_line,neighs[UP], 0, 
+				&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0,
+				grid, &st); 			//To upper
+
+
+		for (j = 1; j <= block_size; j++) {
+			for (i = 1; i <= block_size; i++) {
+			ngb( i, j ) =
+			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
+			    cell( i-1, j   ) +                  cell( i+1, j   ) +
+			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
+		    }
+		}
+
+		MPI_Barrier(grid);
+
+		num_alive = 0;
+		for (j = 1; j <= block_size; j++) {
+			for (i = 1; i <= block_size; i++) {
+				if ( (ngb( i, j ) < 2) || 
+				     (ngb( i, j ) > 3) ) {
+				    cell(i, j) = 0;
+				}
+				else {
+				    if ((ngb( i, j )) == 3)
+					cell(i, j) = 1;
+				}
+				if (cell(i, j) == 1) {
+				    num_alive ++;
+				}
+		    }
+		}
 
 	for (int i = 0; i < nb_processes; ++i)
 	{
 		if(myrank == i){
-		   	output_board( ldboard-2, board+1 +ldboard, ldboard, 0 );
+		   	output_board( ldboard-2, &board[1+ldboard], ldboard, loop);
 		}
 		MPI_Barrier(grid);
 	}
 
-    t1 = mytimer();
-    int block_size = ldboard-2;
-    for (loop = 1; loop <= maxloop; loop++) {
-	cell(   0, 0   ) = cell(block_size, block_size);
-	cell(   0, block_size+1) = cell(block_size,  1);
-	cell(block_size+1, 0   ) = cell( 1, block_size);
-	cell(block_size+1, block_size+1) = cell( 1,  1);
-
-	for (i = 1; i <= block_size; i++) {
-	    cell(   i,    0) = cell( i, block_size);
-	    cell(   i, block_size+1) = cell( i,  1);
-	    cell(   0,    i) = cell(block_size,  i);
-	    cell(block_size+1,    i) = cell( 1,  i);
-	}
-
-	for (j = 1; j <= block_size; j++) {
-		for (i = 1; i <= block_size; i++) {
-		ngb( i, j ) =
-		    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
-		    cell( i-1, j   ) +                  cell( i+1, j   ) +
-		    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
-	    }
-	}
-
-	num_alive = 0;
-	for (j = 1; j <= block_size; j++) {
-		for (i = 1; i <= block_size; i++) {
-			if ( (ngb( i, j ) < 2) || 
-			     (ngb( i, j ) > 3) ) {
-			    cell(i, j) = 0;
-			}
-			else {
-			    if ((ngb( i, j )) == 3)
-				cell(i, j) = 1;
-			}
-			if (cell(i, j) == 1) {
-			    num_alive ++;
-			}
-	    }
-	}
-
-
-#ifdef PRINT_ALIVE
-	printf("%d \n", num_alive);
-#endif
+	#ifdef PRINT_ALIVE
+		printf("%d \n", num_alive);
+	#endif
     }
+	MPI_Gatherv(&board[ldboard+1], 1, sub_block,
+                &globboard2[1+ldglobboard], counts, displs,
+                block, 0, grid);
 
     t2 = mytimer();
 
     temps = t2 - t1;
     MPI_Allreduce(&temps, &real_time, 1,MPI_DOUBLE, MPI_MAX, grid);
-    MPI_Allreduce(&num_alive, &num_alive, 1, MPI_INT, MPI_SUM, grid);
+    MPI_Allreduce(MPI_IN_PLACE, &num_alive, 1, MPI_INT, MPI_SUM, grid);
     if(myrank == 0)
     {
     	printf("Final number of living cells = %d\n", num_alive);
     	printf("time=%.2lf ms\n",(double)temps * 1.e3);
+		#ifdef OUTPUT_BOARD
+			output_board( BS, &globboard2[1+ldglobboard], ldglobboard, maxloop);
+		#endif
 	}
+
+
     free(counts);
     free(displs);
     free(board);
