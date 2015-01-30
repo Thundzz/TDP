@@ -184,31 +184,33 @@ int main(int argc, char* argv[])
 	MPI_Type_commit(&block_line);
 	
 	MPI_Status st;
-	MPI_Request rq[8];
+	MPI_Request rq[16];
+	MPI_Send_init(&cell(1, 1), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[0]); //To the left
+	MPI_Recv_init(&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[8]); 
+
+	MPI_Send_init(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[1]);
+	MPI_Recv_init(&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[9]);	//To the right
+
+	MPI_Send_init(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[2]);
+	MPI_Recv_init(&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0, grid, &rq[10]); //To the upperright
+	
+	MPI_Send_init(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[3]);
+	MPI_Recv_init(&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[11]); //To the lowerright
+	
+	MPI_Send_init(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[4]);
+	MPI_Recv_init(&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[12]);	//To the upperleft
+	
+	MPI_Send_init(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, grid, &rq[5]);
+	MPI_Recv_init(&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[13]);//To the lowerleft.
+	
+	MPI_Send_init(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, grid, &rq[6]);
+	MPI_Recv_init(&cell(0, 1), 1, block_line, neighs[UP], 0, grid, &rq[14]); //To lower
+	
+	MPI_Send_init(&cell(1, 1), 1, block_line,neighs[UP], 0, grid, &rq[7]);
+	MPI_Recv_init(&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0, grid, &rq[15]);	//To upper
+
     for (loop = 1; loop <= maxloop; loop++) {
-		MPI_Isend(&cell(1, 1), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[0]); //To the left
-		MPI_Irecv(&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[0]); 
-
-		MPI_Isend(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[1]);
-		MPI_Irecv(&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[1]);	//To the right
-
-		MPI_Isend(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[2]);
-		MPI_Irecv(&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0, grid, &rq[2]); //To the upperright
-		
-		MPI_Isend(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[3]);
-		MPI_Irecv(&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[3]); //To the lowerright
-		
-		MPI_Isend(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[4]);
-		MPI_Irecv(&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[4]);	//To the upperleft
-		
-		MPI_Isend(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, grid, &rq[5]);
-		MPI_Irecv(&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[5]);//To the lowerleft.
-		
-		MPI_Isend(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, grid, &rq[6]);
-		MPI_Irecv(&cell(0, 1), 1, block_line, neighs[UP], 0, grid, &rq[6]); //To lower
-		
-		MPI_Isend(&cell(1, 1), 1, block_line,neighs[UP], 0, grid, &rq[7]);
-		MPI_Irecv(&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0, grid, &rq[7]);	//To upper
+		MPI_Startall(16, rq);
 
 		for (j = 2; j <= block_size-1; j++) {
 			for (i = 2; i <= block_size-1; i++) {
@@ -221,6 +223,9 @@ int main(int argc, char* argv[])
 
 		//First column needs data from the left
 		MPI_Wait(&rq[1], &st);
+		MPI_Wait(&rq[9], &st);
+		MPI_Wait(&rq[10], &st);
+		MPI_Wait(&rq[11], &st);
 		MPI_Wait(&rq[2], &st);
 		MPI_Wait(&rq[3], &st);
 		j = 1;
@@ -232,6 +237,8 @@ int main(int argc, char* argv[])
 		}
 		//First line needs data from upper
 		MPI_Wait(&rq[5], &st);
+		MPI_Wait(&rq[13], &st);
+		MPI_Wait(&rq[14], &st);
 		MPI_Wait(&rq[6], &st);
 		i = 1;
 		for (j = 1; j <= block_size; j++) {
@@ -243,6 +250,8 @@ int main(int argc, char* argv[])
 
 		//Last column needs data from the right
 		MPI_Wait(&rq[0], &st);
+		MPI_Wait(&rq[8], &st);
+		MPI_Wait(&rq[12], &st);
 		MPI_Wait(&rq[4], &st);
 		j = block_size;
 		for (i = 1; i <= block_size; i++) {
@@ -254,6 +263,7 @@ int main(int argc, char* argv[])
 
 		//Last line needs data from lower
 		MPI_Wait(&rq[7], &st);
+		MPI_Wait(&rq[15], &st);
 		i = block_size;
 		for (j = 1; j <= block_size; j++) {
 			ngb( i, j ) =
@@ -283,6 +293,11 @@ int main(int argc, char* argv[])
 		printf("%d \n", num_alive);
 	#endif
     }
+    for (int i = 0; i < 8; ++i)
+    {
+    	MPI_Request_free(&rq[i]); 
+    }
+
 	MPI_Gatherv(&board[ldboard+1], 1, sub_block,
                 &globboard2[1+ldglobboard], counts, displs,
                 block, 0, grid);
@@ -308,4 +323,3 @@ int main(int argc, char* argv[])
 	MPI_Finalize();
     return EXIT_SUCCESS;
 }
-
