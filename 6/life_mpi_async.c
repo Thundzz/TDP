@@ -7,7 +7,7 @@
 //#define PRINT_ALIVE
 // #define OUTPUT_BOARD
 
-#define BS 10000
+#define BS 1200
 
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
