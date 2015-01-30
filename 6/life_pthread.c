@@ -137,7 +137,7 @@ void * thread_f(void * p)
 			for (i = 1; i <= BS; i++)
 		    	cell(   i, BS+1) = cell( i,  1);
 		}
-		else if(me == 0)
+		if(me == 0)
 		{
 			cell(   0, 0   ) = cell(BS, BS);
 			cell(   0, BS+1) = cell(BS,  1);	
