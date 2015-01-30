@@ -20,6 +20,9 @@ send:
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS) $(OUTPUT)
-	
+
+datclean:
+	rm -f *.dat
+
 clean:
 	rm -rf *.o  *.[oe][0-9]* *~ *# *.out *.dat
