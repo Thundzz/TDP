@@ -16,7 +16,9 @@ To execute the program, run either:
 * life_mpi_async [nb_loops] [array_size] [nb_threads] : MPI with asynchronous communications version
 * life_mpi_persist [nb_loops] [array_size] [nb_threads] : MPI with persistent communications version
 
-#BENCHMAKS
+```
+#BENCHMAKS:
+```
 See and run "benchmarks.rb"
 
 You will find several functions to compute the tests.
@@ -25,4 +27,5 @@ You will find several functions to compute the tests.
 
 * bench_shared_mem_threads() : Strong scalability on OpenMP et pthreads
 * bench_mpi_procs() : Strong scalability on MPI
-Associated functions to generate a gnuplot script and compute the figures are also present
+There are also functions to generate a gnuplot script and compute the figures
+```
