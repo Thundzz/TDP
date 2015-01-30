@@ -145,14 +145,6 @@ int main(int argc, char* argv[])
 	MPI_Scatterv(&globboard[1+ldglobboard], counts, displs, block, &board[ldboard+1], 1,
 				sub_block,0, grid);
 
-	// for (int i = 0; i < nb_processes; ++i)
-	// {
-	// 	if(myrank == i){
-	// 	   	output_board( ldboard, board, ldboard, 99);
-	// 	}
-	// 	MPI_Barrier(grid);
-	// }
-
  	int displ;
  	int index;
  	int coords[2];
@@ -208,7 +200,7 @@ int main(int argc, char* argv[])
 		MPI_Sendrecv(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, 
 				&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0,
 				grid, &st); 			//To the upperleft
-		MPI_Sendrecv(&cell(1, block_size), 1, MPI_INT,neighs[LOWERLEFT], 0, 
+		MPI_Sendrecv(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, 
 				&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0,
 				grid, &st); 			//To the lowerleft.
 		MPI_Sendrecv(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, 
@@ -217,7 +209,14 @@ int main(int argc, char* argv[])
 		MPI_Sendrecv(&cell(1, 1), 1, block_line,neighs[UP], 0, 
 				&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0,
 				grid, &st); 			//To upper
-
+	// for (int i = 0; i < nb_processes; ++i)
+	// {
+	// 	if(myrank == i){
+	// 	   	output_board( ldboard, board, ldboard, 99);
+	// 	   	output_board( ldboard-2, &board[1+ldboard], ldboard, 199);
+	// 	}
+	// 	MPI_Barrier(grid);
+	// }
 
 		for (j = 1; j <= block_size; j++) {
 			for (i = 1; i <= block_size; i++) {
@@ -246,14 +245,14 @@ int main(int argc, char* argv[])
 				}
 		    }
 		}
-
-	for (int i = 0; i < nb_processes; ++i)
-	{
-		if(myrank == i){
-		   	output_board( ldboard-2, &board[1+ldboard], ldboard, loop);
-		}
-		MPI_Barrier(grid);
-	}
+	// for (int i = 0; i < nb_processes; ++i)
+	// {
+	// 	if(myrank == i){
+	// 	   	output_board( ldboard, board, ldboard, 0);
+	// 	   	output_board( ldboard-2, &board[1+ldboard], ldboard, loop);
+	// 	}
+	// 	MPI_Barrier(grid);
+	// }
 
 	#ifdef PRINT_ALIVE
 		printf("%d \n", num_alive);
