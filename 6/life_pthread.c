@@ -76,6 +76,10 @@ int generate_initial_board(int N, int *board, int ldboard)
     return num_alive;
 }
 
+/*
+*	This function increments the neighbours processes' counter by one
+*	If their counter reaches 2, then send a signal to awake them
+*/
 void unlock_neighbours(int* neighbour, 
 						int* counter, pthread_cond_t* cond, pthread_mutex_t* locks)
 {
@@ -90,6 +94,10 @@ void unlock_neighbours(int* neighbour,
 		pthread_mutex_unlock(&locks[neighbour[i]]);
 	}
 }
+
+/*
+*	This function locks the process while his 2 neighbours finishes their job. 
+*/
 void lock_self(int me, int* counter, pthread_cond_t* cond, pthread_mutex_t* locks)
 {
 	pthread_mutex_lock(&locks[me]);

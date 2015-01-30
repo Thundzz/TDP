@@ -93,6 +93,39 @@ void generate_neighbors_table(int* neighs, MPI_Comm grid, int myrank)
 	MPI_Cart_rank(grid, coords, &neighs[LOWERLEFT]);
 }
 
+/**
+ * This function launches the synchronous 
+ */
+void do_comms(int* neighs, MPI_Comm grid, int block_size, 
+				int* board, int ldboard, MPI_Datatype block_line)
+{
+	MPI_Status st;
+	MPI_Sendrecv(&cell(1, 1), block_size, MPI_INT, neighs[LEFT], 0, 
+			&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0,
+			grid, &st); 			//To the left
+	MPI_Sendrecv(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, 
+			&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0,
+			grid, &st); 			//To the right
+	MPI_Sendrecv(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, 
+			&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0,
+			grid, &st); 			//To the upperright
+	MPI_Sendrecv(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, 
+			&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0,
+			grid, &st); 			//To the lowerright
+	MPI_Sendrecv(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, 
+			&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0,
+			grid, &st); 			//To the upperleft
+	MPI_Sendrecv(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, 
+			&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0,
+			grid, &st); 			//To the lowerleft.
+	MPI_Sendrecv(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, 
+			&cell(0, 1), 1, block_line, neighs[UP], 0,
+			grid, &st); 			//To lower
+	MPI_Sendrecv(&cell(1, 1), 1, block_line,neighs[UP], 0, 
+			&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0,
+			grid, &st); 			//To upper
+}
+
 int main(int argc, char* argv[])
 {	
 	MPI_Init(NULL, NULL);
@@ -183,32 +216,9 @@ int main(int argc, char* argv[])
 	MPI_Type_vector(block_size, 1, ldboard, MPI_INT, &block_line);
 	MPI_Type_commit(&block_line);
 
-    for (loop = 1; loop <= maxloop; loop++) {
-		MPI_Status st;
-		MPI_Sendrecv(&cell(1, 1), block_size, MPI_INT, neighs[LEFT], 0, 
-				&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0,
-				grid, &st); 			//To the left
-		MPI_Sendrecv(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, 
-				&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0,
-				grid, &st); 			//To the right
-		MPI_Sendrecv(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, 
-				&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0,
-				grid, &st); 			//To the upperright
-		MPI_Sendrecv(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, 
-				&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0,
-				grid, &st); 			//To the lowerright
-		MPI_Sendrecv(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, 
-				&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0,
-				grid, &st); 			//To the upperleft
-		MPI_Sendrecv(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, 
-				&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0,
-				grid, &st); 			//To the lowerleft.
-		MPI_Sendrecv(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, 
-				&cell(0, 1), 1, block_line, neighs[UP], 0,
-				grid, &st); 			//To lower
-		MPI_Sendrecv(&cell(1, 1), 1, block_line,neighs[UP], 0, 
-				&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0,
-				grid, &st); 			//To upper
+    for (loop = 1; loop <= maxloop; loop++){
+
+		do_comms(neighs, grid, block_size, board, ldboard, block_line);
 
 		for (j = 1; j <= block_size; j++) {
 			for (i = 1; i <= block_size; i++) {

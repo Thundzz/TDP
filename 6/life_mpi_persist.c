@@ -12,6 +12,10 @@
 #define cell( _i_, _j_ ) board[ ldboard * (_j_) + (_i_) ]
 #define ngb( _i_, _j_ )  nbngb[ ldnbngb * ((_j_) - 1) + ((_i_) - 1 ) ]
 
+//Edge type
+#define LINE_EDGE 100
+#define COLUMN_EDGE 200
+
 //Neighbors table indexes...
 #define LEFT 0
 #define RIGHT 1
@@ -100,28 +104,52 @@ void init_comms(MPI_Request* rq, int* neighs, MPI_Comm grid, int block_size,
 				int* board, int ldboard, MPI_Datatype block_line)
 {
 	MPI_Send_init(&cell(1, 1), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[0]); //To the left
-	MPI_Recv_init(&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[8]); 
+	MPI_Recv_init(&cell(1, block_size+1), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[1]); 
 
-	MPI_Send_init(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[1]);
-	MPI_Recv_init(&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[9]);	//To the right
+	MPI_Send_init(&cell(1, block_size), block_size, MPI_INT, neighs[RIGHT], 0, grid, &rq[2]); //To the right
+	MPI_Recv_init(&cell(1, 0), block_size, MPI_INT, neighs[LEFT], 0, grid, &rq[3]);	
 
-	MPI_Send_init(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[2]);
-	MPI_Recv_init(&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0, grid, &rq[10]); //To the upperright
+	MPI_Send_init(&cell(1, block_size), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[4]); //To the upperright
+	MPI_Recv_init(&cell(block_size+1, 0), 1, MPI_INT, neighs[LOWERLEFT], 0, grid, &rq[5]); 
 	
-	MPI_Send_init(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[3]);
-	MPI_Recv_init(&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[11]); //To the lowerright
+	MPI_Send_init(&cell(block_size, block_size), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[6]);  //To the lowerright
+	MPI_Recv_init(&cell(0, 0), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[7]);
 	
-	MPI_Send_init(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[4]);
-	MPI_Recv_init(&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[12]);	//To the upperleft
+	MPI_Send_init(&cell(1, 1), 1, MPI_INT, neighs[UPPERLEFT], 0, grid, &rq[8]);
+	MPI_Recv_init(&cell(block_size+1, block_size+1), 1, MPI_INT, neighs[LOWERRIGHT], 0, grid, &rq[9]);	//To the upperleft
 	
-	MPI_Send_init(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, grid, &rq[5]);
-	MPI_Recv_init(&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[13]);//To the lowerleft.
+	MPI_Send_init(&cell(block_size, 1), 1, MPI_INT,neighs[LOWERLEFT], 0, grid, &rq[10]); //To the lowerleft.
+	MPI_Recv_init(&cell(0, block_size+1), 1, MPI_INT, neighs[UPPERRIGHT], 0, grid, &rq[11]);
 	
-	MPI_Send_init(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, grid, &rq[6]);
-	MPI_Recv_init(&cell(0, 1), 1, block_line, neighs[UP], 0, grid, &rq[14]); //To lower
+	MPI_Send_init(&cell(block_size, 1), 1, block_line,neighs[DOWN], 0, grid, &rq[12]); //To lower
+	MPI_Recv_init(&cell(0, 1), 1, block_line, neighs[UP], 0, grid, &rq[13]); 
 	
-	MPI_Send_init(&cell(1, 1), 1, block_line,neighs[UP], 0, grid, &rq[7]);
-	MPI_Recv_init(&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0, grid, &rq[15]);	//To upper
+	MPI_Send_init(&cell(1, 1), 1, block_line,neighs[UP], 0, grid, &rq[14]); //To upper
+	MPI_Recv_init(&cell(block_size+1, 1), 1, block_line, neighs[DOWN], 0, grid, &rq[15]);	
+}
+
+void calc_ngb_edges(int k, int edgetype, int block_size, int* board, int ldboard, int* nbngb, int ldnbngb)
+{
+	if (edgetype == LINE_EDGE)
+	{
+		int i = k;
+		for (int j = 1; j <= block_size; j++) {
+			ngb( i, j ) =
+			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
+			    cell( i-1, j   ) +                  cell( i+1, j   ) +
+			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
+		}
+	}
+	if (edgetype == COLUMN_EDGE)
+	{
+		int j = k;
+		for (int i = 1; i <= block_size; i++) {
+			ngb( i, j ) =
+			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
+			    cell( i-1, j   ) +                  cell( i+1, j   ) +
+			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
+		}
+	}
 }
 
 int main(int argc, char* argv[])
@@ -220,8 +248,10 @@ int main(int argc, char* argv[])
 	init_comms(rq, neighs, grid, block_size, board, ldboard, block_line);
 
     for (loop = 1; loop <= maxloop; loop++) {
+		//// Start communications ////
 		MPI_Startall(16, rq);
 
+		//// Compute inner ngb ////
 		for (j = 2; j <= block_size-1; j++) {
 			for (i = 2; i <= block_size-1; i++) {
 			ngb( i, j ) =
@@ -231,57 +261,30 @@ int main(int argc, char* argv[])
 		    }
 		}
 
+		//// Computes ngb on the edges ////
+
 		//First column needs data from the left
-		MPI_Wait(&rq[1], &st);
-		MPI_Wait(&rq[9], &st);
-		MPI_Wait(&rq[10], &st);
-		MPI_Wait(&rq[11], &st);
-		MPI_Wait(&rq[2], &st);
-		MPI_Wait(&rq[3], &st);
-		j = 1;
-		for (i = 1; i <= block_size; i++) {
-			ngb( i, j ) =
-			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
-			    cell( i-1, j   ) +                  cell( i+1, j   ) +
-			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
-		}
+		MPI_Waitall(2, &rq[2], &st);
+		MPI_Waitall(2, &rq[4], &st);
+		MPI_Waitall(2, &rq[6], &st);
+		calc_ngb_edges(1, COLUMN_EDGE, block_size, board, ldboard, nbngb, ldnbngb);
+
 		//First line needs data from upper
-		MPI_Wait(&rq[5], &st);
-		MPI_Wait(&rq[13], &st);
-		MPI_Wait(&rq[14], &st);
-		MPI_Wait(&rq[6], &st);
-		i = 1;
-		for (j = 1; j <= block_size; j++) {
-			ngb( i, j ) =
-			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
-			    cell( i-1, j   ) +                  cell( i+1, j   ) +
-			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
-		}
+		MPI_Waitall(2, &rq[10], &st);
+		MPI_Waitall(2, &rq[12], &st);
+		calc_ngb_edges(1, LINE_EDGE, block_size, board, ldboard, nbngb, ldnbngb);
 
 		//Last column needs data from the right
-		MPI_Wait(&rq[0], &st);
-		MPI_Wait(&rq[8], &st);
-		MPI_Wait(&rq[12], &st);
-		MPI_Wait(&rq[4], &st);
-		j = block_size;
-		for (i = 1; i <= block_size; i++) {
-			ngb( i, j ) =
-			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
-			    cell( i-1, j   ) +                  cell( i+1, j   ) +
-			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
-		}
+		MPI_Waitall(2, &rq[0], &st);
+		MPI_Waitall(2, &rq[8], &st);
+		calc_ngb_edges(block_size, COLUMN_EDGE, block_size, board, ldboard, nbngb, ldnbngb);
 
 		//Last line needs data from lower
-		MPI_Wait(&rq[7], &st);
-		MPI_Wait(&rq[15], &st);
-		i = block_size;
-		for (j = 1; j <= block_size; j++) {
-			ngb( i, j ) =
-			    cell( i-1, j-1 ) + cell( i, j-1 ) + cell( i+1, j-1 ) +
-			    cell( i-1, j   ) +                  cell( i+1, j   ) +
-			    cell( i-1, j+1 ) + cell( i, j+1 ) + cell( i+1, j+1 );
-		}
+		MPI_Waitall(2, &rq[14], &st);
+		calc_ngb_edges(block_size, LINE_EDGE, block_size, board, ldboard, nbngb, ldnbngb);
 
+
+		//// Refresh cells ////
 		num_alive = 0;
 		for (j = 1; j <= block_size; j++) {
 			for (i = 1; i <= block_size; i++) {
